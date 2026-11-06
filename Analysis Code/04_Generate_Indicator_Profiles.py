@@ -421,6 +421,162 @@ def generate_uk_overview_popout_map(gdf, roads, rtree, params, exemplars):
     print(f'Saved UK overview pop-out figure: {OVERVIEW_FIG}')
 
 
+def generate_methodological_controls_figure(gdf, roads, rtree, params):
+    """Render a 4-panel step-by-step construction of the methodological controls."""
+    qa_fig_path = FIG_DIR / 'visual_qa_sidewalk_consolidation.png'
+    row = gdf[gdf['RC_ID'] == 88].iloc[0]  # Milsom Street & Westgate Street, Bath
+    poly = row.geometry
+    core = poly.buffer(params.buffer_m)
+    minx, miny, maxx, maxy = core.bounds
+    cx, cy = (minx + maxx) / 2.0, (miny + maxy) / 2.0
+    radius = max(maxx - minx, maxy - miny) * 0.54 + 15.0
+    study_circle = shapely.Point(cx, cy).buffer(radius, quad_segs=48)
+
+    idx = rtree.query(poly.buffer(params.context_m), predicate='intersects')
+    cand = roads.iloc[idx].reset_index(drop=True)
+    geoms = cand.geometry.to_numpy()
+    gs = cand['is_grade_sep'].to_numpy()
+
+    wm_raw = get_walk_mask(cand)
+    sw = detect_parallel_sidewalks(cand)
+    wm_nosw = wm_raw & ~sw
+    srv_mask = wm_nosw & (cand['fclass'] == 'service').to_numpy()
+    wm_street = wm_nosw & ~srv_mask
+
+    g1 = build_consolidated_graph(geoms[wm_raw], gs[wm_raw], core, 0.5)
+    g2 = build_consolidated_graph(geoms[wm_nosw], gs[wm_nosw], core, 0.5)
+    g3 = build_consolidated_graph(geoms[wm_street], gs[wm_street], core, 0.5)
+    g4 = build_consolidated_graph(geoms[wm_street], gs[wm_street], core, params.tol_m)
+
+    fig, axes = plt.subplots(1, 4, figsize=(18.0, 5.8), dpi=220, facecolor=PAGE_BG)
+
+    steps = [
+        ('1 · Raw OpenStreetMap Network', '#5975a4', g1),
+        ('2 · Parallel Sidewalk Filter', '#D55E00', g2),
+        ('3 · Car-Park & Service Separation', '#A63C36', g3),
+        ('4 · 10 m Junction Consolidation', '#1d4e89', g4),
+    ]
+
+    for step_idx, (ax, (step_title, title_col, g_step)) in enumerate(zip(axes, steps)):
+        ax.set_facecolor(PAGE_BG)
+        _add_centre_fill(ax, poly, '#269989', alpha=0.26, zorder=2)
+
+        if step_idx == 0:
+            s_raw = _lines_to_segments(shapely.intersection(geoms[wm_raw], study_circle))
+            if s_raw:
+                ax.add_collection(LineCollection(s_raw, colors='#5975a4', linewidths=0.95, alpha=0.88, zorder=4, rasterized=True))
+            junc = g1['deg'] >= 3
+            pts = g1['xy'][junc]
+            in_c = shapely.contains_xy(study_circle, pts[:, 0], pts[:, 1])
+            ax.scatter(pts[in_c, 0], pts[in_c, 1], s=7.5, c='#2b2b2b', alpha=0.85, zorder=6, edgecolors='none')
+
+        elif step_idx == 1:
+            s_keep = _lines_to_segments(shapely.intersection(geoms[wm_nosw], study_circle))
+            s_sw = _lines_to_segments(shapely.intersection(geoms[wm_raw & sw], study_circle))
+            if s_keep:
+                ax.add_collection(LineCollection(s_keep, colors='#2b5c8f', linewidths=0.95, alpha=0.82, zorder=4, rasterized=True))
+            if s_sw:
+                ax.add_collection(LineCollection(s_sw, colors='#D55E00', linewidths=1.35, alpha=0.95, zorder=5, rasterized=True))
+            junc = g2['deg'] >= 3
+            pts = g2['xy'][junc]
+            in_c = shapely.contains_xy(study_circle, pts[:, 0], pts[:, 1])
+            ax.scatter(pts[in_c, 0], pts[in_c, 1], s=7.5, c='#2b2b2b', alpha=0.80, zorder=6, edgecolors='none')
+
+        elif step_idx == 2:
+            s_sw = _lines_to_segments(shapely.intersection(geoms[wm_raw & sw], study_circle))
+            s_st = _lines_to_segments(shapely.intersection(geoms[wm_street], study_circle))
+            s_srv = _lines_to_segments(shapely.intersection(geoms[srv_mask], study_circle))
+            if s_sw:
+                ax.add_collection(LineCollection(s_sw, colors=NEUTRAL_ROAD, linewidths=0.55, alpha=0.65, zorder=3, rasterized=True))
+            if s_st:
+                ax.add_collection(LineCollection(s_st, colors='#2b5c8f', linewidths=1.0, alpha=0.85, zorder=4, rasterized=True))
+            if s_srv:
+                ax.add_collection(LineCollection(s_srv, colors='#A63C36', linewidths=1.45, alpha=0.95, zorder=5, rasterized=True))
+            junc = g3['deg'] >= 3
+            pts = g3['xy'][junc]
+            in_c = shapely.contains_xy(study_circle, pts[:, 0], pts[:, 1])
+            ax.scatter(pts[in_c, 0], pts[in_c, 1], s=8.0, c='#2b2b2b', alpha=0.82, zorder=6, edgecolors='none')
+
+        elif step_idx == 3:
+            s_removed = _lines_to_segments(shapely.intersection(geoms[wm_raw & ~wm_street], study_circle))
+            s_ctx_st = _lines_to_segments(shapely.intersection(geoms[wm_street], study_circle.difference(core)))
+            if s_removed:
+                ax.add_collection(LineCollection(s_removed, colors=NEUTRAL_ROAD, linewidths=0.5, alpha=0.55, zorder=3, rasterized=True))
+            if s_ctx_st:
+                ax.add_collection(LineCollection(s_ctx_st, colors='#8fa3b8', linewidths=0.80, alpha=0.70, zorder=3, rasterized=True))
+            ground = geoms[wm_street & ~gs]
+            clipped = shapely.intersection(ground, core)
+            merged = shapely.line_merge(shapely.union_all(clipped))
+            polys = np.array(list(polygonize(merged)), dtype=object)
+            if len(polys):
+                areas = shapely.area(polys)
+                valid_blocks = polys[(areas >= 100.0) & (areas <= 100000.0)]
+                patches = []
+                for bp in valid_blocks:
+                    for part in shapely.get_parts(bp):
+                        if shapely.get_type_id(part) == 3:
+                            patches.append(MplPolygon(np.asarray(part.exterior.coords), closed=True))
+                if patches:
+                    pc = PatchCollection(patches, facecolor='#E69F00', edgecolor='#b85d19', linewidth=0.55, alpha=0.42, zorder=4)
+                    ax.add_collection(pc)
+            e_clip = shapely.intersection(g4['egeom'], study_circle)
+            s_cons = _lines_to_segments(e_clip)
+            if s_cons:
+                ax.add_collection(LineCollection(s_cons, colors='#1d4e89', linewidths=1.35, alpha=0.95, zorder=5, rasterized=True))
+            junc = g4['deg'] >= 3
+            pts = g4['xy'][junc]
+            in_c = shapely.contains_xy(study_circle, pts[:, 0], pts[:, 1])
+            ax.scatter(pts[in_c, 0], pts[in_c, 1], s=13.0, c='#1b1b1b', alpha=0.92, zorder=6, edgecolors='none')
+
+
+        pad = radius * 0.04
+        ax.set_xlim(cx - radius - pad, cx + radius + pad)
+        ax.set_ylim(cy - radius - pad, cy + radius + pad)
+        ax.set_aspect('equal')
+        ax.set_axis_off()
+
+        n_junc = int((g_step['deg'] >= 3).sum())
+        n_edges = len(g_step['eu'])
+        ax.text(
+            0.5, 1.03,
+            step_title,
+            transform=ax.transAxes, ha='center', va='bottom',
+            fontsize=11.5, weight='bold', family=FONT_FAMILY, color=title_col, clip_on=False
+        )
+        ax.text(
+            0.5, -0.03,
+            f"{n_junc:,} junctions · {n_edges:,} edges",
+            transform=ax.transAxes, ha='center', va='top',
+            fontsize=11.0, weight='bold', family=FONT_FAMILY, color=TEXT_DARK, clip_on=False
+        )
+
+    handles = [
+        Patch(facecolor='#269989', edgecolor='none', alpha=0.35, label='Retail centre footprint (Bath City Centre)'),
+        Line2D([0], [0], color='#D55E00', lw=2.0, label='Parallel sidewalks removed (≤12 m, ≤25°)'),
+        Line2D([0], [0], color='#A63C36', lw=2.0, label='Service & car-park loops separated'),
+        Line2D([0], [0], color='#1d4e89', lw=2.0, label='Consolidated street network (10 m)'),
+        Line2D([0], [0], marker='o', color='none', markerfacecolor='#1b1b1b', markersize=5.5, label='True street junctions (deg ≥ 3)'),
+        Patch(facecolor='#E69F00', edgecolor='#b85d19', alpha=0.45, label='Enclosed urban blocks'),
+    ]
+    fig.legend(
+        handles=handles,
+        loc='lower center',
+        ncol=len(handles),
+        frameon=False,
+        prop={'family': FONT_FAMILY, 'size': 9.8},
+        bbox_to_anchor=(0.5, 0.01)
+    )
+    fig.suptitle(
+        'Step-by-Step Street-Network Graph Construction',
+        fontsize=20, fontweight='bold', family=FONT_FAMILY,
+        color=TEXT_DARK, y=0.97
+    )
+    fig.subplots_adjust(left=0.015, right=0.985, bottom=0.13, top=0.82, wspace=0.04)
+    fig.savefig(qa_fig_path, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved methodological controls figure: {qa_fig_path}')
+
+
 # 4. Generate All 11 Indicator Profile Figures ----------------------------
 
 def main():
@@ -500,6 +656,7 @@ def main():
         print(f'Saved {out_path}')
 
     generate_uk_overview_popout_map(gdf, roads, rtree, params, overview_exemplars)
+    generate_methodological_controls_figure(gdf, roads, rtree, params)
 
     ex_df = pd.DataFrame(example_records)
     ex_df.to_csv(EXAMPLES_CSV, index=False)
@@ -508,3 +665,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
