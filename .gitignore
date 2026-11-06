@@ -1,0 +1,12 @@
+.DS_Store
+__pycache__/
+*.pyc
+outputs/
+src/
+docs/
+classify_networks.py
+make_eight_centre_panels.py
+make_first_map.py
+make_merseyside_popout_map.py
+make_retail_metric_maps.py
+make_typology_map.py

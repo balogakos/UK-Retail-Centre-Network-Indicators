@@ -1,0 +1,12 @@
+indicator,tier_scope,eligible_N,valid_N,missing_pct,median,iqr_25,iqr_75,rho_area_all_eligible,rho_area_street_centres,within_tier_abs_rho_area,rho_sidewalk_mapped,cliffs_delta_hierarchy,cliffs_delta_rp_vs_hs
+walk_reach_400,"Universal Core (N = 9,623)",9623,9617,0.06,0.625,0.543,0.693,0.215,0.17,0.152,-0.122,0.487,-0.72
+drive_reach_400,"Universal Core (N = 9,623)",9623,9507,1.21,0.63,0.538,0.709,0.178,0.201,0.184,-0.046,0.28,-0.591
+arterial_share,"Universal Core (N = 9,623)",9623,9572,0.53,0.253,0.058,0.37,0.227,0.125,0.088,0.112,0.149,0.444
+service_share,"Universal Core (N = 9,623)",9623,9572,0.53,0.292,0.185,0.412,0.361,0.086,0.199,0.047,-0.145,0.689
+carfree_share,"Universal Core (N = 9,623)",9623,9621,0.02,0.122,0.056,0.204,0.109,0.162,0.068,-0.044,0.677,-0.419
+walk_median_edge_len_m,"Universal Core (N = 9,623)",9623,9617,0.06,39.992,34.535,48.303,-0.342,-0.128,0.127,-0.14,-0.434,-0.257
+walk_meshedness,"Universal Core (N = 9,623)",9623,9582,0.43,0.063,0.034,0.094,0.361,0.352,0.201,0.076,0.708,-0.288
+walk_sightline_continuity,"Universal Core (N = 9,623)",9623,9605,0.19,0.9,0.851,0.944,-0.156,-0.038,0.097,0.04,0.046,-0.155
+flow_concentration,"Universal Core (N = 9,623)",9623,9614,0.09,0.464,0.422,0.509,0.465,0.212,0.273,0.216,0.197,0.57
+walk_block_median_area_m2,"Street-Grid Set (N = 1,521)",1521,1520,0.07,7404.608,4992.517,11213.378,-0.075,-0.075,0.076,0.001,-0.449,
+orientation_entropy,"Street-Grid Set (N = 1,521)",1521,1521,0.0,0.917,0.872,0.945,0.323,0.323,0.142,-0.014,0.193,
