@@ -22,6 +22,8 @@ To control for OpenStreetMap pavement-mapping habits, polygon size, false endpoi
    - **Block Scale & Grid Order:** `walk_block_median_area_m2`, `orientation_entropy`
    - *Scope note:* These two street-grid metrics are computed for traditional street-network centres (`Regional Centre`, `Major Town Centre`, `Town Centre`, `Market Town`, `District Centre`, and `Local Centre`; `N = 1,521`) and set to `NaN` for `Small Local Centres` (which lack sufficient edges to populate directional histograms or enclosed blocks) and out-of-town `Retail Parks` / `Shopping Centres`.
 
+![UK Retail Centre Street-Network Morphologies](Output%20Data/Figures/uk_retail_centre_indicator_popouts.png)
+
 ### 1.1 Download the Indicators & Validation Tables
 
 All released indicators and reproducible validation tables are located in the `Output Data/` directory:
@@ -40,7 +42,7 @@ All scripts use repository-relative paths and compute indicators from scratch wi
 - [1. Extracting OpenStreetMap Highway Networks (`Analysis Code/01_Extract_OSM_Networks.py`)](Analysis%20Code/01_Extract_OSM_Networks.py) — extracts highway ways within 400 m of [`Input Data/retailcentre_bounds_uk.gpkg`](Input%20Data/retailcentre_bounds_uk.gpkg) from `Input Data/united-kingdom-latest.osm.pbf` into `Input Data/uk_roads_400m.parquet` (preserving `footway`, `service`, `access`, `foot`, `motor_vehicle`, `oneway`, `bridge`, `tunnel`, and `layer` tags).
 - [2. Calculating Street-Network Indicators (`Analysis Code/02_Calculate_Network_Indicators.py`)](Analysis%20Code/02_Calculate_Network_Indicators.py) — computes all 11 indicators and `sidewalk_mapped_share` directly from `Input Data/retailcentre_bounds_uk.gpkg` and `Input Data/uk_roads_400m.parquet`.
 - [3. Validating Network Indicators (`Analysis Code/03_Validate_Network_Indicators.py`)](Analysis%20Code/03_Validate_Network_Indicators.py) — generates both [`Validation_Scorecard.csv`](Output%20Data/Validation_Scorecard.csv) and the stratified perturbation sensitivity table [`Validation_Robustness.csv`](Output%20Data/Validation_Robustness.csv).
-- [4. Generating Representative Visual Profiles (`Analysis Code/04_Generate_Indicator_Profiles.py`)](Analysis%20Code/04_Generate_Indicator_Profiles.py) — renders [`Output Data/Figures/profile_01_*.png` to `profile_11_*.png`](Output%20Data/Figures/) and exports [`Indicator_Profile_Examples.csv`](Output%20Data/Indicator_Profile_Examples.csv).
+- [4. Generating Representative Visual Profiles (`Analysis Code/04_Generate_Indicator_Profiles.py`)](Analysis%20Code/04_Generate_Indicator_Profiles.py) — renders the national overview map [`uk_retail_centre_indicator_popouts.png`](Output%20Data/Figures/uk_retail_centre_indicator_popouts.png), the 11 distribution profile maps [`Output Data/Figures/profile_01_*.png` to `profile_11_*.png`](Output%20Data/Figures/), and exports [`Indicator_Profile_Examples.csv`](Output%20Data/Indicator_Profile_Examples.csv).
 
 ----
 

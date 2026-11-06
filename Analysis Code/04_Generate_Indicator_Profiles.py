@@ -1,12 +1,15 @@
-## Generating Low / Median / High Retail Centre Visual Profiles for All 11 Indicators
+## Generating UK Overview Pop-Out Map and Low / Median / High Visual Profiles for All 11 Indicators
 
 from pathlib import Path
 import sys
+import textwrap
 import geopandas as gpd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, PatchCollection
 from matplotlib.lines import Line2D
-from matplotlib.patches import Polygon as MplPolygon
+from matplotlib.patches import Patch, Polygon as MplPolygon
 import numpy as np
 import pandas as pd
 from scipy.sparse.csgraph import dijkstra
@@ -30,41 +33,66 @@ from Helper_Functions import (
 )
 
 
-# 1. Repository-Relative Paths & Indicator Specifications -----------------
+# 1. Repository-Relative Paths & Cartographic Styling ---------------------
 
 CENTRES_PATH = REPO_ROOT / 'Input Data' / 'retailcentre_bounds_uk.gpkg'
 ROADS_PARQUET = REPO_ROOT / 'Input Data' / 'uk_roads_400m.parquet'
+UK_BASEMAP_GPKG = REPO_ROOT / 'Input Data' / 'uk_basemap_boundaries.gpkg'
 IN_CSV = REPO_ROOT / 'Output Data' / 'UK_Retail_Centre_Network_Indicators.csv'
 FIG_DIR = REPO_ROOT / 'Output Data' / 'Figures'
+OVERVIEW_FIG = FIG_DIR / 'uk_retail_centre_indicator_popouts.png'
 EXAMPLES_CSV = REPO_ROOT / 'Output Data' / 'Indicator_Profile_Examples.csv'
+
+PAGE_BG = '#fbfaf7'
+OVERVIEW_BG = '#f6f3ec'
+LAND_FILL = '#efeadd'
+LAD_STROKE = '#ddd7c8'
+NEUTRAL_ROAD = '#cbc9c2'
+TEXT_DARK = '#1b1b1b'
+FONT_FAMILY = 'Times New Roman'
+
+# Coordinated palette: (fill_hex, highlight_hex, secondary_hex)
+PALETTE = {
+    'walk_reach_400':            ('#269989', '#0072B2', '#d95f02'),
+    'drive_reach_400':           ('#6576B8', '#2b5c8f', '#c53a32'),
+    'arterial_share':            ('#D55E00', '#B51F2E', '#7b92a8'),
+    'service_share':             ('#CC79A7', '#A63C36', '#7b92a8'),
+    'carfree_share':             ('#269989', '#0b775e', '#7b92a8'),
+    'walk_median_edge_len_m':    ('#E69F00', '#7251A1', '#c8c7c1'),
+    'walk_meshedness':           ('#66A061', '#2b6a4c', '#c8c7c1'),
+    'walk_sightline_continuity': ('#5975a4', '#1d4e89', '#c8c7c1'),
+    'flow_concentration':        ('#D55E00', '#b51f2e', '#7b92a8'),
+    'walk_block_median_area_m2': ('#E69F00', '#b85d19', '#2b5c8f'),
+    'orientation_entropy':       ('#8c6bb1', '#59408D', '#c8c7c1'),
+}
 
 INDICATOR_SPECS = [
     ('walk_reach_400', 'profile_01_walk_reach_400.png',
-     'Walkable Neighbourhood Reach (walk_reach_400)', '{:.2f}', 'universal', 'ring_walk'),
+     'Walkable Neighbourhood Reach', '{:.2f}', 'universal', 'ring_walk', 'high'),
     ('drive_reach_400', 'profile_02_drive_reach_400.png',
-     'Motorised Road-Network Embeddedness (drive_reach_400)', '{:.2f}', 'universal', 'ring_drive'),
+     'Motorised Road-Network Embeddedness', '{:.2f}', 'universal', 'ring_drive', 'high'),
     ('arterial_share', 'profile_03_arterial_share.png',
-     'Arterial Traffic Road Share (arterial_share)', '{:.2f}', 'universal', 'arterial'),
+     'Arterial Traffic Share', '{:.2f}', 'universal', 'arterial', 'high'),
     ('service_share', 'profile_04_service_share.png',
-     'Service & Car-Park Access Share (service_share)', '{:.2f}', 'universal', 'service'),
+     'Service & Car-Park Access Share', '{:.2f}', 'universal', 'service', 'high'),
     ('carfree_share', 'profile_05_carfree_share.png',
-     'Dedicated Pedestrian-Way Share (carfree_share)', '{:.2f}', 'universal', 'carfree'),
+     'Dedicated Pedestrian-Way Share', '{:.2f}', 'universal', 'carfree', 'high'),
     ('walk_median_edge_len_m', 'profile_06_walk_median_edge_len_m.png',
-     'Walkable Street Grain: Median Edge Length (walk_median_edge_len_m)', '{:.1f} m', 'street_grid', 'street_graph'),
+     'Walkable Street Grain', '{:.1f} m', 'street_grid', 'street_graph', 'low'),
     ('walk_meshedness', 'profile_07_walk_meshedness.png',
-     'Street-Network Meshedness / Loop Ratio (walk_meshedness)', '{:.3f}', 'street_grid', 'street_graph'),
+     'Street-Network Meshedness', '{:.3f}', 'street_grid', 'street_graph', 'high'),
     ('walk_sightline_continuity', 'profile_08_walk_sightline_continuity.png',
-     'Descriptive Axial Sightline Continuity (walk_sightline_continuity)', '{:.2f}', 'street_grid', 'street_graph'),
+     'Axial Sightline Continuity', '{:.2f}', 'street_grid', 'street_graph', 'high'),
     ('flow_concentration', 'profile_09_flow_concentration.png',
-     'Through-Movement Flow Concentration: 400 m Metric Betweenness Gini (flow_concentration)', '{:.2f}', 'street_grid', 'betweenness'),
+     'Through-Movement Flow Concentration', '{:.2f}', 'street_grid', 'betweenness', 'high'),
     ('walk_block_median_area_m2', 'profile_10_walk_block_median_area_m2.png',
-     'Enclosed Urban Block Area (walk_block_median_area_m2)', '{:,.0f} m²', 'street_grid', 'blocks'),
+     'Enclosed Urban Block Area', '{:,.0f} m²', 'street_grid', 'blocks', 'low'),
     ('orientation_entropy', 'profile_11_orientation_entropy.png',
-     'Street Bearing Orientation Entropy (orientation_entropy)', '{:.3f}', 'street_grid', 'street_graph'),
+     'Street Bearing Orientation Entropy', '{:.3f}', 'street_grid', 'street_graph', 'high'),
 ]
 
 
-# 2. Helper Functions for Selecting & Plotting Representative Centres -----
+# 2. Geometry & Plotting Helpers ------------------------------------------
 
 def _lines_to_segments(geoms):
     segs = []
@@ -80,12 +108,35 @@ def _lines_to_segments(geoms):
 
 
 def _clean_label_name(rc_name):
-    base = str(rc_name).split('(')[0].strip().rstrip(';')
-    parts = [p.strip() for p in base.split(';') if p.strip()]
-    if len(parts) >= 2 and parts[0].lower() == parts[1].lower():
-        parts = parts[:1] + parts[2:]
-    out = ', '.join(parts[:2])
-    return out if len(out) <= 38 else parts[0][:38]
+    import re
+    cleaned = re.sub(r'\([^)]*\)', '', str(rc_name))
+    parts = [p.strip() for p in cleaned.split(';') if p.strip()]
+    dedup = []
+    for p in parts:
+        p_clean = p.replace('City of ', '').replace(' City', '').strip()
+        if not dedup or p_clean.lower() not in dedup[-1].lower():
+            dedup.append(p_clean if len(dedup) >= 1 else p.replace(' & ', ' and '))
+    out = ', '.join(dedup[:2])
+    if len(out) > 34 and len(dedup) >= 2:
+        short_first = dedup[0].split(' and ')[0].strip()
+        out2 = f"{short_first}, {dedup[1]}"
+        return out2 if len(out2) <= 34 else dedup[0][:34]
+    return out[:34]
+
+
+def _add_centre_fill(ax, geom, facecolor, alpha=0.38, zorder=2):
+    for part in shapely.get_parts(geom):
+        if shapely.get_type_id(part) == 3:
+            ax.add_patch(
+                MplPolygon(
+                    np.asarray(part.exterior.coords),
+                    closed=True,
+                    facecolor=facecolor,
+                    edgecolor='none',
+                    alpha=alpha,
+                    zorder=zorder
+                )
+            )
 
 
 def pick_three_centres(df, col, filter_mode):
@@ -97,9 +148,9 @@ def pick_three_centres(df, col, filter_mode):
         sub_all = sub[(sub['Classification'] != 'Small Local Centre') & (sub['Area_km2'] >= 0.06) & (sub['Area_km2'] <= 0.85)].sort_values(col).reset_index(drop=True)
         sub_st = sub[(~sub['Classification'].isin(STREET_GRID_EXCLUDED_TIERS)) & (sub['Area_km2'] >= 0.09) & (sub['Area_km2'] <= 0.75)].sort_values(col).reset_index(drop=True)
         return [
-            ('Low (8th pct)', sub_all.iloc[int(len(sub_all) * 0.08)]),
-            ('Median (50th pct)', sub_st.iloc[int(len(sub_st) * 0.50)]),
-            ('High (92nd pct)', sub_st.iloc[int(len(sub_st) * 0.92)]),
+            ('Low', sub_all.iloc[int(len(sub_all) * 0.08)]),
+            ('Median', sub_st.iloc[int(len(sub_st) * 0.50)]),
+            ('High', sub_st.iloc[int(len(sub_st) * 0.92)]),
         ]
     else:
         sub = sub[sub['Classification'] != 'Small Local Centre']
@@ -108,15 +159,24 @@ def pick_three_centres(df, col, filter_mode):
     sub = sub.sort_values(col).reset_index(drop=True)
     n = len(sub)
     q_indices = [int(n * 0.08), int(n * 0.50), int(n * 0.92)]
-    labels = ['Low (8th pct)', 'Median (50th pct)', 'High (92nd pct)']
+    labels = ['Low', 'Median', 'High']
     return [(lbl, sub.iloc[idx]) for lbl, idx in zip(labels, q_indices)]
 
 
-def plot_panel(ax, row, cand, params, highlight_mode):
+def plot_panel(ax, row, cand, params, col, highlight_mode):
+    ax.set_facecolor(PAGE_BG)
     poly = row.geometry
     core = poly.buffer(params.buffer_m)
     ctx = poly.buffer(params.context_m)
-    view_box = poly.buffer(220.0) if 'ring' not in highlight_mode else ctx
+
+    # Organic radial clip around the retail centre so no rectangular frame appears
+    minx, miny, maxx, maxy = (ctx if 'ring' in highlight_mode else core).bounds
+    cx, cy = (minx + maxx) / 2.0, (miny + maxy) / 2.0
+    radius = max(maxx - minx, maxy - miny) * 0.54 + 20.0
+    study_circle = shapely.Point(cx, cy).buffer(radius, quad_segs=48)
+
+    fill_col, hi_col, sec_col = PALETTE[col]
+    _add_centre_fill(ax, poly, fill_col, alpha=0.38, zorder=2)
 
     sw = detect_parallel_sidewalks(cand)
     wm = get_walk_mask(cand) & ~sw
@@ -128,9 +188,9 @@ def plot_panel(ax, row, cand, params, highlight_mode):
     geoms = cand.geometry.to_numpy()
     gs = cand['is_grade_sep'].to_numpy()
 
-    bg_segs = _lines_to_segments(shapely.intersection(geoms[wm | dm], view_box))
+    bg_segs = _lines_to_segments(shapely.intersection(geoms[wm | dm], study_circle))
     if bg_segs:
-        ax.add_collection(LineCollection(bg_segs, colors='#e0e0e0', linewidths=0.7, zorder=1))
+        ax.add_collection(LineCollection(bg_segs, colors=NEUTRAL_ROAD, linewidths=0.45, alpha=0.72, zorder=3, rasterized=True))
 
     if highlight_mode in ('ring_walk', 'ring_drive'):
         use_mask = wm if highlight_mode == 'ring_walk' else dm
@@ -145,56 +205,57 @@ def plot_panel(ax, row, cand, params, highlight_mode):
                 reached = np.isfinite(du) | np.isfinite(dv)
                 mid = shapely.line_interpolate_point(g['egeom'], 0.5, normalized=True)
                 ring = ~shapely.contains(poly, mid)
-                s_reach = _lines_to_segments(g['egeom'][ring & reached])
-                s_unreach = _lines_to_segments(g['egeom'][ring & ~reached])
-                s_core = _lines_to_segments(g['egeom'][~ring])
+                e_clip = shapely.intersection(g['egeom'], study_circle)
+                s_reach = _lines_to_segments(e_clip[ring & reached])
+                s_unreach = _lines_to_segments(e_clip[ring & ~reached])
+                s_core = _lines_to_segments(e_clip[~ring])
                 if s_unreach:
-                    ax.add_collection(LineCollection(s_unreach, colors='#de2d26', linewidths=1.25, zorder=2))
+                    ax.add_collection(LineCollection(s_unreach, colors=sec_col, linewidths=1.05, alpha=0.85, zorder=4, rasterized=True))
                 if s_reach:
-                    ax.add_collection(LineCollection(s_reach, colors='#1f78b4', linewidths=1.45, zorder=3))
+                    ax.add_collection(LineCollection(s_reach, colors=hi_col, linewidths=1.35, alpha=0.95, zorder=5, rasterized=True))
                 if s_core:
-                    ax.add_collection(LineCollection(s_core, colors='#636363', linewidths=1.1, zorder=2))
+                    ax.add_collection(LineCollection(s_core, colors='#555555', linewidths=0.95, alpha=0.80, zorder=4, rasterized=True))
     elif highlight_mode == 'arterial':
         art = dm & np.isin(fc, list(ARTERIAL_CLASSES))
         non_art = dm & ~art
-        s1 = _lines_to_segments(shapely.intersection(geoms[non_art], core))
-        s2 = _lines_to_segments(shapely.intersection(geoms[art], core))
+        s1 = _lines_to_segments(shapely.intersection(geoms[non_art], study_circle))
+        s2 = _lines_to_segments(shapely.intersection(geoms[art], study_circle))
         if s1:
-            ax.add_collection(LineCollection(s1, colors='#6baed6', linewidths=1.2, zorder=2))
+            ax.add_collection(LineCollection(s1, colors=sec_col, linewidths=0.85, alpha=0.75, zorder=4, rasterized=True))
         if s2:
-            ax.add_collection(LineCollection(s2, colors='#cb181d', linewidths=2.3, zorder=4))
+            ax.add_collection(LineCollection(s2, colors=hi_col, linewidths=2.0, alpha=0.95, zorder=6, rasterized=True))
     elif highlight_mode == 'service':
-        s_drv = _lines_to_segments(shapely.intersection(geoms[dm], core))
-        s_srv = _lines_to_segments(shapely.intersection(geoms[sm], core))
+        s_drv = _lines_to_segments(shapely.intersection(geoms[dm], study_circle))
+        s_srv = _lines_to_segments(shapely.intersection(geoms[sm], study_circle))
         if s_drv:
-            ax.add_collection(LineCollection(s_drv, colors='#6baed6', linewidths=1.2, zorder=2))
+            ax.add_collection(LineCollection(s_drv, colors=sec_col, linewidths=0.85, alpha=0.75, zorder=4, rasterized=True))
         if s_srv:
-            ax.add_collection(LineCollection(s_srv, colors='#d95f02', linewidths=2.0, zorder=4))
+            ax.add_collection(LineCollection(s_srv, colors=hi_col, linewidths=1.55, alpha=0.95, zorder=6, rasterized=True))
     elif highlight_mode == 'carfree':
         cf = wm & np.isin(fc, list(CARFREE_CLASSES))
         shared = wm_street & ~cf
-        s_sh = _lines_to_segments(shapely.intersection(geoms[shared], core))
-        s_cf = _lines_to_segments(shapely.intersection(geoms[cf], core))
+        s_sh = _lines_to_segments(shapely.intersection(geoms[shared], study_circle))
+        s_cf = _lines_to_segments(shapely.intersection(geoms[cf], study_circle))
         if s_sh:
-            ax.add_collection(LineCollection(s_sh, colors='#6baed6', linewidths=1.2, zorder=2))
+            ax.add_collection(LineCollection(s_sh, colors=sec_col, linewidths=0.9, alpha=0.75, zorder=4, rasterized=True))
         if s_cf:
-            ax.add_collection(LineCollection(s_cf, colors='#238b45', linewidths=2.2, zorder=4))
+            ax.add_collection(LineCollection(s_cf, colors=hi_col, linewidths=1.85, alpha=0.95, zorder=6, rasterized=True))
     elif highlight_mode == 'betweenness':
         gw = build_consolidated_graph(geoms[wm_street], gs[wm_street], ctx, params.tol_m)
         if gw is not None:
-            core_e = shapely.intersects(gw['egeom'], core)
+            core_e = shapely.intersects(gw['egeom'], study_circle)
             if core_e.sum() >= 5:
                 eb = compute_distance_limited_edge_betweenness(gw, limit_m=params.reach_m)
-                eb_core = eb[core_e]
-                geoms_core = shapely.intersection(gw['egeom'][core_e], core)
-                q75 = np.quantile(eb_core, 0.75) if len(eb_core) else 0
-                spine = eb_core >= max(q75, 1e-6)
-                s_back = _lines_to_segments(geoms_core[~spine])
-                s_spine = _lines_to_segments(geoms_core[spine])
+                eb_sub = eb[core_e]
+                geoms_sub = shapely.intersection(gw['egeom'][core_e], study_circle)
+                q75 = np.quantile(eb_sub, 0.75) if len(eb_sub) else 0
+                spine = eb_sub >= max(q75, 1e-6)
+                s_back = _lines_to_segments(geoms_sub[~spine])
+                s_spine = _lines_to_segments(geoms_sub[spine])
                 if s_back:
-                    ax.add_collection(LineCollection(s_back, colors='#6baed6', linewidths=1.15, zorder=2))
+                    ax.add_collection(LineCollection(s_back, colors=sec_col, linewidths=0.9, alpha=0.78, zorder=4, rasterized=True))
                 if s_spine:
-                    ax.add_collection(LineCollection(s_spine, colors='#cb181d', linewidths=2.3, zorder=4))
+                    ax.add_collection(LineCollection(s_spine, colors=hi_col, linewidths=2.0, alpha=0.95, zorder=6, rasterized=True))
     elif highlight_mode == 'blocks':
         gw_st = build_consolidated_graph(geoms[wm_street], gs[wm_street], ctx, params.tol_m)
         if gw_st is not None and gw_st['merged'] is not None:
@@ -207,82 +268,160 @@ def plot_panel(ax, row, cand, params, highlight_mode):
                     inside = shapely.contains(core, shapely.point_on_surface(polys))
                     for bp in polys[inside]:
                         xy = np.asarray(bp.exterior.coords)
-                        ax.add_patch(MplPolygon(xy, closed=True, facecolor='#fdd0a2', edgecolor='#d94801', lw=1.0, alpha=0.65, zorder=2))
-            st_segs = _lines_to_segments(shapely.intersection(gw_st['egeom'], core))
+                        ax.add_patch(MplPolygon(xy, closed=True, facecolor=fill_col, edgecolor=hi_col, lw=0.8, alpha=0.48, zorder=3))
+            st_segs = _lines_to_segments(shapely.intersection(gw_st['egeom'], study_circle))
             if st_segs:
-                ax.add_collection(LineCollection(st_segs, colors='#08519c', linewidths=1.4, zorder=3))
+                ax.add_collection(LineCollection(st_segs, colors=sec_col, linewidths=1.15, alpha=0.9, zorder=5, rasterized=True))
     else:
-        gw = build_consolidated_graph(geoms[wm_street], gs[wm_street], core, params.tol_m)
+        gw = build_consolidated_graph(geoms[wm_street], gs[wm_street], study_circle, params.tol_m)
         if gw is not None:
             segs = _lines_to_segments(gw['egeom'])
             if segs:
-                ax.add_collection(LineCollection(segs, colors='#08519c', linewidths=1.5, zorder=3))
+                ax.add_collection(LineCollection(segs, colors=hi_col, linewidths=1.35, alpha=0.92, zorder=5, rasterized=True))
             junc = gw['deg'] >= 3
             if junc.sum() > 0:
-                ax.scatter(gw['xy'][junc, 0], gw['xy'][junc, 1], s=11, c='#d94801', zorder=4)
+                ax.scatter(gw['xy'][junc, 0], gw['xy'][junc, 1], s=10, c='#1b1b1b', alpha=0.75, zorder=6)
 
-    for p in shapely.get_parts(poly):
-        x, y = p.exterior.xy
-        ax.plot(x, y, color='#111111', lw=1.5, zorder=5)
-    for p in shapely.get_parts(core):
-        x, y = p.exterior.xy
-        ax.plot(x, y, color='#555555', lw=0.9, ls='--', zorder=5)
-
-    bounds_geom = view_box if 'ring' in highlight_mode else core
-    minx, miny, maxx, maxy = bounds_geom.bounds
-    span = max(maxx - minx, maxy - miny) * 0.56 + 25.0
-    cx, cy = (minx + maxx) / 2.0, (miny + maxy) / 2.0
-    ax.set_xlim(cx - span, cx + span)
-    ax.set_ylim(cy - span, cy + span)
-    ax.set_aspect('equal')
-    ax.set_xticks([])
-    ax.set_yticks([])
+    ax.set_xlim(cx - radius * 1.03, cx + radius * 1.03)
+    ax.set_ylim(cy - radius * 1.03, cy + radius * 1.03)
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_axis_off()
 
 
-def _legend_for_mode(highlight_mode):
-    base = [
-        Line2D([0], [0], color='#111111', lw=1.5, label='Retail centre boundary'),
-        Line2D([0], [0], color='#555555', lw=0.9, ls='--', label='100 m core readout buffer'),
-    ]
+def _legend_for_mode(col, highlight_mode):
+    fill_col, hi_col, sec_col = PALETTE[col]
+    handles = [Patch(facecolor=fill_col, edgecolor='none', alpha=0.42, label='Retail centre footprint')]
     if 'ring' in highlight_mode:
-        base += [
-            Line2D([0], [0], color='#1f78b4', lw=1.6, label='Reachable 400 m ring network'),
-            Line2D([0], [0], color='#de2d26', lw=1.4, label='Unreachable ring network (>400 m / severed)'),
+        handles += [
+            Line2D([0], [0], color=hi_col, lw=1.8, label='Reachable within 400 m'),
+            Line2D([0], [0], color=sec_col, lw=1.4, label='Unreachable (> 400 m)'),
         ]
     elif highlight_mode == 'arterial':
-        base += [
-            Line2D([0], [0], color='#cb181d', lw=2.3, label='Arterial roads (motorway/trunk/primary/secondary)'),
-            Line2D([0], [0], color='#6baed6', lw=1.3, label='Local drivable streets'),
+        handles += [
+            Line2D([0], [0], color=hi_col, lw=2.0, label='Arterial roads'),
+            Line2D([0], [0], color=sec_col, lw=1.1, label='Local streets'),
         ]
     elif highlight_mode == 'service':
-        base += [
-            Line2D([0], [0], color='#d95f02', lw=2.0, label='Service & car-park access lanes (highway=service)'),
-            Line2D([0], [0], color='#6baed6', lw=1.3, label='Public drivable streets'),
+        handles += [
+            Line2D([0], [0], color=hi_col, lw=1.8, label='Service & car-park lanes'),
+            Line2D([0], [0], color=sec_col, lw=1.1, label='Public streets'),
         ]
     elif highlight_mode == 'carfree':
-        base += [
-            Line2D([0], [0], color='#238b45', lw=2.2, label='Dedicated pedestrian ways (pedestrian/footway/path, sidewalks removed)'),
-            Line2D([0], [0], color='#6baed6', lw=1.3, label='Shared streets'),
+        handles += [
+            Line2D([0], [0], color=hi_col, lw=1.9, label='Dedicated pedestrian ways'),
+            Line2D([0], [0], color=sec_col, lw=1.1, label='Shared streets'),
         ]
     elif highlight_mode == 'betweenness':
-        base += [
-            Line2D([0], [0], color='#cb181d', lw=2.3, label='Primary movement corridors (top 25% 400 m betweenness)'),
-            Line2D([0], [0], color='#6baed6', lw=1.2, label='Secondary walkable streets'),
+        handles += [
+            Line2D([0], [0], color=hi_col, lw=2.0, label='Primary movement corridors (top 25%)'),
+            Line2D([0], [0], color=sec_col, lw=1.1, label='Secondary walkable streets'),
         ]
     elif highlight_mode == 'blocks':
-        base += [
-            Line2D([0], [0], color='#d94801', lw=1.2, marker='s', markerfacecolor='#fdd0a2', markersize=7, label='Enclosed urban street blocks (car-park lanes excluded)'),
-            Line2D([0], [0], color='#08519c', lw=1.4, label='Consolidated street network'),
+        handles += [
+            Patch(facecolor=fill_col, edgecolor=hi_col, alpha=0.5, label='Enclosed urban street blocks'),
+            Line2D([0], [0], color=sec_col, lw=1.3, label='Consolidated street network'),
         ]
     else:
-        base += [
-            Line2D([0], [0], color='#08519c', lw=1.5, label='Consolidated street network (sidewalks & car parks removed)'),
-            Line2D([0], [0], marker='o', color='w', markerfacecolor='#d94801', markersize=5, label='Street junction (degree >= 3)'),
+        handles += [
+            Line2D([0], [0], color=hi_col, lw=1.5, label='Consolidated street network'),
+            Line2D([0], [0], marker='o', color='none', markerfacecolor='#1b1b1b', markersize=5, label='Street junction (degree ≥ 3)'),
         ]
-    return base
+    return handles
 
 
-# 3. Generate All 11 Indicator Profile Figures ----------------------------
+# 3. Generate Flagship UK Pop-Out Overview Map ----------------------------
+
+def generate_uk_overview_popout_map(gdf, roads, rtree, params, exemplars):
+    fig = plt.figure(figsize=(22, 13.5), dpi=220, facecolor=PAGE_BG)
+    fig.text(
+        0.5, 0.968,
+        'UK Retail Centre Street-Network Morphologies',
+        ha='center', va='top', fontsize=26, weight='bold',
+        family=FONT_FAMILY, color=TEXT_DARK
+    )
+
+    # Central UK basemap panel
+    main_ax = fig.add_axes([0.305, 0.06, 0.39, 0.85], facecolor=OVERVIEW_BG, zorder=1)
+    if UK_BASEMAP_GPKG.exists():
+        uk_outline = gpd.read_file(UK_BASEMAP_GPKG, layer='uk_outline').to_crs(27700)
+        uk_lads = gpd.read_file(UK_BASEMAP_GPKG, layer='uk_lads').to_crs(27700)
+        land_patches = []
+        for g in uk_outline.geometry:
+            for p in shapely.get_parts(g):
+                if shapely.get_type_id(p) == 3:
+                    land_patches.append(MplPolygon(np.asarray(p.exterior.coords), closed=True))
+        if land_patches:
+            main_ax.add_collection(
+                PatchCollection(land_patches, facecolor=LAND_FILL, edgecolor='#b8b1a3', linewidth=0.45, zorder=2, rasterized=True)
+            )
+        lad_segs = []
+        for g in uk_lads.geometry.boundary:
+            lad_segs.extend(_lines_to_segments([g]))
+        if lad_segs:
+            main_ax.add_collection(
+                LineCollection(lad_segs, colors=LAD_STROKE, linewidths=0.25, alpha=0.65, zorder=3, rasterized=True)
+            )
+
+    # All 9,623 UK retail centres as subtle background points on the UK basemap
+    pts = shapely.centroid(gdf.geometry.to_numpy())
+    px = shapely.get_x(pts)
+    py = shapely.get_y(pts)
+    main_ax.scatter(px, py, s=1.8, c='#7c8896', alpha=0.38, linewidths=0, zorder=4, rasterized=True)
+
+    # Highlight the 11 exemplar centres on the UK map
+    for idx_num, item in enumerate(exemplars, 1):
+        col, title, fmt, highlight_mode, row = item
+        pt = row.geometry.centroid
+        fill_col, hi_col, _ = PALETTE[col]
+        main_ax.scatter([pt.x], [pt.y], s=58, facecolor=hi_col, edgecolor='white', linewidth=1.3, zorder=10)
+
+    main_ax.set_xlim(-65000, 670000)
+    main_ax.set_ylim(5000, 1225000)
+    main_ax.set_aspect('equal', adjustable='box')
+    main_ax.set_axis_off()
+
+    # Arrange 6 pop-outs on the left (3 rows x 2 cols) and 5 pop-outs on the right (3 rows: 2, 2, 1 centered)
+    left_positions = [
+        (0.025, 0.655), (0.162, 0.655),
+        (0.025, 0.365), (0.162, 0.365),
+        (0.025, 0.075), (0.162, 0.075),
+    ]
+    right_positions = [
+        (0.710, 0.655), (0.847, 0.655),
+        (0.710, 0.365), (0.847, 0.365),
+        (0.778, 0.075),
+    ]
+    all_positions = left_positions + right_positions
+    panel_w, panel_h = 0.128, 0.215
+
+    for (col, title, fmt, highlight_mode, row), (x0, y0) in zip(exemplars, all_positions):
+        fill_col, hi_col, _ = PALETTE[col]
+        ax = fig.add_axes([x0, y0, panel_w, panel_h], facecolor=PAGE_BG, zorder=5)
+        ctx = row.geometry.buffer(params.context_m)
+        idx = rtree.query(ctx, predicate='intersects')
+        cand = roads.iloc[idx].reset_index(drop=True)
+        plot_panel(ax, row, cand, params, col, highlight_mode)
+
+        val_str = fmt.format(row[col])
+        short_name = _clean_label_name(row['RC_Name'])
+        ax.text(
+            0.5, 1.04, title,
+            transform=ax.transAxes, ha='center', va='bottom',
+            fontsize=9.8, weight='bold', family=FONT_FAMILY, color=hi_col, clip_on=False
+        )
+        ax.text(
+            0.5, -0.03,
+            f"{textwrap.fill(short_name, width=22)}\n({val_str})",
+            transform=ax.transAxes, ha='center', va='top',
+            fontsize=9.0, weight='bold', family=FONT_FAMILY, color=TEXT_DARK, clip_on=False
+        )
+
+    fig.savefig(OVERVIEW_FIG, bbox_inches='tight', facecolor=PAGE_BG)
+    plt.close(fig)
+    print(f'Saved UK overview pop-out figure: {OVERVIEW_FIG}')
+
+
+# 4. Generate All 11 Indicator Profile Figures ----------------------------
 
 def main():
     FIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -295,27 +434,41 @@ def main():
     params = NetworkParams()
 
     example_records = []
+    overview_exemplars = []
 
-    for col, fname, title, fmt, filter_mode, highlight_mode in INDICATOR_SPECS:
+    for col, fname, title, fmt, filter_mode, highlight_mode, exemplar_side in INDICATOR_SPECS:
         picks = pick_three_centres(gdf, col, filter_mode)
-        fig, axes = plt.subplots(1, 3, figsize=(14.5, 5.3))
+        exemplar_row = picks[0][1] if exemplar_side == 'low' else picks[2][1]
+        overview_exemplars.append((col, title, fmt, highlight_mode, exemplar_row))
 
-        for ax, (pct_label, row) in zip(axes, picks):
+        fill_col, hi_col, _ = PALETTE[col]
+        fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.6), dpi=220, facecolor=PAGE_BG)
+
+        for ax, (band_label, row) in zip(axes, picks):
             ctx = row.geometry.buffer(params.context_m)
             idx = rtree.query(ctx, predicate='intersects')
             cand = roads.iloc[idx].reset_index(drop=True)
-            plot_panel(ax, row, cand, params, highlight_mode)
+            plot_panel(ax, row, cand, params, col, highlight_mode)
 
             val_str = fmt.format(row[col])
             short_name = _clean_label_name(row['RC_Name'])
-            ax.set_title(
-                f"{pct_label}: {val_str}\n{short_name}\n[{row['Classification']} | {row['Area_km2']:.2f} km²]",
-                fontsize=9.5, pad=6
+
+            ax.text(
+                0.5, 1.03,
+                f"{band_label} · {val_str}",
+                transform=ax.transAxes, ha='center', va='bottom',
+                fontsize=11.5, weight='bold', family=FONT_FAMILY, color=hi_col, clip_on=False
+            )
+            ax.text(
+                0.5, -0.03,
+                short_name,
+                transform=ax.transAxes, ha='center', va='top',
+                fontsize=11.5, weight='bold', family=FONT_FAMILY, color=TEXT_DARK, clip_on=False
             )
 
             example_records.append({
                 'indicator': col,
-                'profile_band': pct_label,
+                'profile_band': band_label,
                 'RC_ID': row['RC_ID'],
                 'RC_Name': row['RC_Name'],
                 'Classification': row['Classification'],
@@ -326,13 +479,27 @@ def main():
                 'figure_file': f'Output Data/Figures/{fname}'
             })
 
-        fig.legend(handles=_legend_for_mode(highlight_mode), loc='lower center', ncol=2, fontsize=8.5, frameon=True)
-        fig.suptitle(title, fontsize=12, fontweight='bold', y=0.98)
-        fig.tight_layout(rect=[0, 0.08, 1, 0.93])
+        handles = _legend_for_mode(col, highlight_mode)
+        fig.legend(
+            handles=handles,
+            loc='lower center',
+            ncol=len(handles),
+            frameon=False,
+            prop={'family': FONT_FAMILY, 'size': 10.5},
+            bbox_to_anchor=(0.5, 0.01)
+        )
+        fig.suptitle(
+            title,
+            fontsize=20, fontweight='bold', family=FONT_FAMILY,
+            color=TEXT_DARK, y=0.97
+        )
+        fig.subplots_adjust(left=0.02, right=0.98, bottom=0.13, top=0.82, wspace=0.06)
         out_path = FIG_DIR / fname
-        fig.savefig(out_path, dpi=180)
+        fig.savefig(out_path, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
         plt.close(fig)
         print(f'Saved {out_path}')
+
+    generate_uk_overview_popout_map(gdf, roads, rtree, params, overview_exemplars)
 
     ex_df = pd.DataFrame(example_records)
     ex_df.to_csv(EXAMPLES_CSV, index=False)

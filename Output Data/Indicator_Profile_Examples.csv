@@ -1,34 +1,34 @@
 indicator,profile_band,RC_ID,RC_Name,Classification,Region_NM,Area_km2,value,formatted_value,figure_file
-walk_reach_400,Low (8th pct),6019,Peel Retail Park; Sunderland (North East; England),Small Retail Park,North East,0.091,0.4592401642340614,0.46,Output Data/Figures/profile_01_walk_reach_400.png
-walk_reach_400,Median (50th pct),754,High Street; Stony Stratford; Milton Keynes (South East; England),District Centre,South East,0.108,0.6674273030334648,0.67,Output Data/Figures/profile_01_walk_reach_400.png
-walk_reach_400,High (92nd pct),54,Bradford; Bradford (Yorkshire and The Humber; England),Major Town Centre,Yorkshire and The Humber,0.453,0.7807506381514352,0.78,Output Data/Figures/profile_01_walk_reach_400.png
-drive_reach_400,Low (8th pct),1863,Rushden Lakes Shopping Centre; North Northamptonshire (East Midlands; England),Large Retail Park,East Midlands,0.284,0.4488959363878307,0.45,Output Data/Figures/profile_02_drive_reach_400.png
-drive_reach_400,Median (50th pct),183,Derry/Londonderry; Derry City and Strabane (Northern Ireland),Major Town Centre,Northern Ireland,0.271,0.6684135579919014,0.67,Output Data/Figures/profile_02_drive_reach_400.png
-drive_reach_400,High (92nd pct),59,Tooting Graveney; Wandsworth (London; England),Town Centre,London,0.483,0.7885683976951707,0.79,Output Data/Figures/profile_02_drive_reach_400.png
-arterial_share,Low (8th pct),513,Coventry Road; Sparkbrook; Birmingham (West Midlands; England),District Centre,West Midlands,0.21,0.068501875099959,0.07,Output Data/Figures/profile_03_arterial_share.png
-arterial_share,Median (50th pct),646,Galashiels; Scottish Borders (Scotland),Town Centre,Scotland,0.23,0.2964438686863399,0.30,Output Data/Figures/profile_03_arterial_share.png
-arterial_share,High (92nd pct),4809,Parc Pemberton; Carmarthenshire (Wales),Small Retail Park,Wales,0.155,0.5688025398247801,0.57,Output Data/Figures/profile_03_arterial_share.png
-service_share,Low (8th pct),310,London Road; Milton; Southend-on-Sea (East of England; England),District Centre,East of England,0.177,0.1818203642999148,0.18,Output Data/Figures/profile_04_service_share.png
-service_share,Median (50th pct),2255,Bath Road Retail Park; Cippenham; Slough (South East; England),Large Retail Park,South East,0.066,0.3898524960892525,0.39,Output Data/Figures/profile_04_service_share.png
-service_share,High (92nd pct),755,Cheshire Oaks Designer Outlet; Cheshire West and Chester (North West; England),Large Shopping Centre,North West,0.19,0.612739298988332,0.61,Output Data/Figures/profile_04_service_share.png
-carfree_share,Low (8th pct),3040,Bideford Atlantic Village; Torridge (South West; England),Large Shopping Centre,South West,0.128,0.0584086026924965,0.06,Output Data/Figures/profile_05_carfree_share.png
-carfree_share,Median (50th pct),265,Bexhill-on-Sea; Rother (South East; England),Town Centre,South East,0.313,0.201648093863469,0.20,Output Data/Figures/profile_05_carfree_share.png
-carfree_share,High (92nd pct),1120,Thetford; Breckland (East of England; England),Local Centre,East of England,0.141,0.342315615086389,0.34,Output Data/Figures/profile_05_carfree_share.png
-walk_median_edge_len_m,Low (8th pct),139,Old City (Bristol City Centre); City of Bristol (South West; England),Regional Centre,South West,0.177,32.39981388163147,32.4 m,Output Data/Figures/profile_06_walk_median_edge_len_m.png
-walk_median_edge_len_m,Median (50th pct),68,Ealing; Ealing (London; England),Major Town Centre,London,0.458,42.92376604075561,42.9 m,Output Data/Figures/profile_06_walk_median_edge_len_m.png
-walk_median_edge_len_m,High (92nd pct),877,High Street; South Norwood; Croydon (London; England),District Centre,London,0.098,63.938342117260206,63.9 m,Output Data/Figures/profile_06_walk_median_edge_len_m.png
-walk_meshedness,Low (8th pct),698,High Street; Honiton; East Devon (South West; England),Market Town,South West,0.117,0.0513833992094861,0.051,Output Data/Figures/profile_07_walk_meshedness.png
-walk_meshedness,Median (50th pct),1023,Lutterworth; Harborough (East Midlands; England),Market Town,East Midlands,0.125,0.093655589123867,0.094,Output Data/Figures/profile_07_walk_meshedness.png
-walk_meshedness,High (92nd pct),449,Queen Street; Morley; Leeds (Yorkshire and The Humber; England),District Centre,Yorkshire and The Humber,0.194,0.1407249466950959,0.141,Output Data/Figures/profile_07_walk_meshedness.png
-walk_sightline_continuity,Low (8th pct),1394,Kenton Road; Kenton; Brent (London; England),Local Centre,London,0.12,0.8,0.80,Output Data/Figures/profile_08_walk_sightline_continuity.png
-walk_sightline_continuity,Median (50th pct),763,Main Street; Bingley; Bradford (Yorkshire and The Humber; England),District Centre,Yorkshire and The Humber,0.105,0.8829787234042553,0.88,Output Data/Figures/profile_08_walk_sightline_continuity.png
-walk_sightline_continuity,High (92nd pct),273,Whitley Bay; North Tyneside (North East; England),Town Centre,North East,0.199,0.9489795918367347,0.95,Output Data/Figures/profile_08_walk_sightline_continuity.png
-flow_concentration,Low (8th pct),653,Arnold; Gedling (East Midlands; England),Town Centre,East Midlands,0.172,0.4095619271279955,0.41,Output Data/Figures/profile_09_flow_concentration.png
-flow_concentration,Median (50th pct),107,High Wycombe; Buckinghamshire (South East; England),Major Town Centre,South East,0.402,0.4787174907656835,0.48,Output Data/Figures/profile_09_flow_concentration.png
-flow_concentration,High (92nd pct),146,St James Quarter (Edinburgh City Centre); City of Edinburgh (Scotland),Regional Centre,Scotland,0.235,0.5686141277112154,0.57,Output Data/Figures/profile_09_flow_concentration.png
-walk_block_median_area_m2,Low (8th pct),60,Kirkgate Market & Vicar Lane (Leeds City Centre); Leeds (Yorkshire and The Humber; England),Regional Centre,Yorkshire and The Humber,0.243,3025.809620558023,"3,026 m²",Output Data/Figures/profile_10_walk_block_median_area_m2.png
-walk_block_median_area_m2,Median (50th pct),870,Warwick Road; Acocks Green; Birmingham (West Midlands; England),District Centre,West Midlands,0.15,6844.293453242469,"6,844 m²",Output Data/Figures/profile_10_walk_block_median_area_m2.png
-walk_block_median_area_m2,High (92nd pct),730,Leytonstone; Waltham Forest (London; England),Town Centre,London,0.162,16008.813278529324,"16,009 m²",Output Data/Figures/profile_10_walk_block_median_area_m2.png
-orientation_entropy,Low (8th pct),570,High Street; New Malden; Kingston upon Thames (London; England),District Centre,London,0.13,0.8180969135082394,0.818,Output Data/Figures/profile_11_orientation_entropy.png
-orientation_entropy,Median (50th pct),1060,High Street; Potters Bar; Hertsmere (East of England; England),Local Centre,East of England,0.146,0.9296225684929365,0.930,Output Data/Figures/profile_11_orientation_entropy.png
-orientation_entropy,High (92nd pct),1030,King Street (Aberdeen City Centre); Aberdeen City (Scotland),Major Town Centre,Scotland,0.169,0.9719793591556448,0.972,Output Data/Figures/profile_11_orientation_entropy.png
+walk_reach_400,Low,6019,Peel Retail Park; Sunderland (North East; England),Small Retail Park,North East,0.091,0.4592401642340614,0.46,Output Data/Figures/profile_01_walk_reach_400.png
+walk_reach_400,Median,754,High Street; Stony Stratford; Milton Keynes (South East; England),District Centre,South East,0.108,0.6674273030334648,0.67,Output Data/Figures/profile_01_walk_reach_400.png
+walk_reach_400,High,54,Bradford; Bradford (Yorkshire and The Humber; England),Major Town Centre,Yorkshire and The Humber,0.453,0.7807506381514352,0.78,Output Data/Figures/profile_01_walk_reach_400.png
+drive_reach_400,Low,1863,Rushden Lakes Shopping Centre; North Northamptonshire (East Midlands; England),Large Retail Park,East Midlands,0.284,0.4488959363878307,0.45,Output Data/Figures/profile_02_drive_reach_400.png
+drive_reach_400,Median,183,Derry/Londonderry; Derry City and Strabane (Northern Ireland),Major Town Centre,Northern Ireland,0.271,0.6684135579919014,0.67,Output Data/Figures/profile_02_drive_reach_400.png
+drive_reach_400,High,59,Tooting Graveney; Wandsworth (London; England),Town Centre,London,0.483,0.7885683976951707,0.79,Output Data/Figures/profile_02_drive_reach_400.png
+arterial_share,Low,513,Coventry Road; Sparkbrook; Birmingham (West Midlands; England),District Centre,West Midlands,0.21,0.068501875099959,0.07,Output Data/Figures/profile_03_arterial_share.png
+arterial_share,Median,646,Galashiels; Scottish Borders (Scotland),Town Centre,Scotland,0.23,0.2964438686863399,0.30,Output Data/Figures/profile_03_arterial_share.png
+arterial_share,High,4809,Parc Pemberton; Carmarthenshire (Wales),Small Retail Park,Wales,0.155,0.5688025398247801,0.57,Output Data/Figures/profile_03_arterial_share.png
+service_share,Low,310,London Road; Milton; Southend-on-Sea (East of England; England),District Centre,East of England,0.177,0.1818203642999148,0.18,Output Data/Figures/profile_04_service_share.png
+service_share,Median,2255,Bath Road Retail Park; Cippenham; Slough (South East; England),Large Retail Park,South East,0.066,0.3898524960892525,0.39,Output Data/Figures/profile_04_service_share.png
+service_share,High,755,Cheshire Oaks Designer Outlet; Cheshire West and Chester (North West; England),Large Shopping Centre,North West,0.19,0.612739298988332,0.61,Output Data/Figures/profile_04_service_share.png
+carfree_share,Low,3040,Bideford Atlantic Village; Torridge (South West; England),Large Shopping Centre,South West,0.128,0.0584086026924965,0.06,Output Data/Figures/profile_05_carfree_share.png
+carfree_share,Median,265,Bexhill-on-Sea; Rother (South East; England),Town Centre,South East,0.313,0.201648093863469,0.20,Output Data/Figures/profile_05_carfree_share.png
+carfree_share,High,1120,Thetford; Breckland (East of England; England),Local Centre,East of England,0.141,0.342315615086389,0.34,Output Data/Figures/profile_05_carfree_share.png
+walk_median_edge_len_m,Low,139,Old City (Bristol City Centre); City of Bristol (South West; England),Regional Centre,South West,0.177,32.39981388163147,32.4 m,Output Data/Figures/profile_06_walk_median_edge_len_m.png
+walk_median_edge_len_m,Median,68,Ealing; Ealing (London; England),Major Town Centre,London,0.458,42.92376604075561,42.9 m,Output Data/Figures/profile_06_walk_median_edge_len_m.png
+walk_median_edge_len_m,High,877,High Street; South Norwood; Croydon (London; England),District Centre,London,0.098,63.938342117260206,63.9 m,Output Data/Figures/profile_06_walk_median_edge_len_m.png
+walk_meshedness,Low,698,High Street; Honiton; East Devon (South West; England),Market Town,South West,0.117,0.0513833992094861,0.051,Output Data/Figures/profile_07_walk_meshedness.png
+walk_meshedness,Median,1023,Lutterworth; Harborough (East Midlands; England),Market Town,East Midlands,0.125,0.093655589123867,0.094,Output Data/Figures/profile_07_walk_meshedness.png
+walk_meshedness,High,449,Queen Street; Morley; Leeds (Yorkshire and The Humber; England),District Centre,Yorkshire and The Humber,0.194,0.1407249466950959,0.141,Output Data/Figures/profile_07_walk_meshedness.png
+walk_sightline_continuity,Low,1394,Kenton Road; Kenton; Brent (London; England),Local Centre,London,0.12,0.8,0.80,Output Data/Figures/profile_08_walk_sightline_continuity.png
+walk_sightline_continuity,Median,763,Main Street; Bingley; Bradford (Yorkshire and The Humber; England),District Centre,Yorkshire and The Humber,0.105,0.8829787234042553,0.88,Output Data/Figures/profile_08_walk_sightline_continuity.png
+walk_sightline_continuity,High,273,Whitley Bay; North Tyneside (North East; England),Town Centre,North East,0.199,0.9489795918367347,0.95,Output Data/Figures/profile_08_walk_sightline_continuity.png
+flow_concentration,Low,653,Arnold; Gedling (East Midlands; England),Town Centre,East Midlands,0.172,0.4095619271279955,0.41,Output Data/Figures/profile_09_flow_concentration.png
+flow_concentration,Median,107,High Wycombe; Buckinghamshire (South East; England),Major Town Centre,South East,0.402,0.4787174907656835,0.48,Output Data/Figures/profile_09_flow_concentration.png
+flow_concentration,High,146,St James Quarter (Edinburgh City Centre); City of Edinburgh (Scotland),Regional Centre,Scotland,0.235,0.5686141277112154,0.57,Output Data/Figures/profile_09_flow_concentration.png
+walk_block_median_area_m2,Low,60,Kirkgate Market & Vicar Lane (Leeds City Centre); Leeds (Yorkshire and The Humber; England),Regional Centre,Yorkshire and The Humber,0.243,3025.809620558023,"3,026 m²",Output Data/Figures/profile_10_walk_block_median_area_m2.png
+walk_block_median_area_m2,Median,870,Warwick Road; Acocks Green; Birmingham (West Midlands; England),District Centre,West Midlands,0.15,6844.293453242469,"6,844 m²",Output Data/Figures/profile_10_walk_block_median_area_m2.png
+walk_block_median_area_m2,High,730,Leytonstone; Waltham Forest (London; England),Town Centre,London,0.162,16008.813278529324,"16,009 m²",Output Data/Figures/profile_10_walk_block_median_area_m2.png
+orientation_entropy,Low,570,High Street; New Malden; Kingston upon Thames (London; England),District Centre,London,0.13,0.8180969135082394,0.818,Output Data/Figures/profile_11_orientation_entropy.png
+orientation_entropy,Median,1060,High Street; Potters Bar; Hertsmere (East of England; England),Local Centre,East of England,0.146,0.9296225684929365,0.930,Output Data/Figures/profile_11_orientation_entropy.png
+orientation_entropy,High,1030,King Street (Aberdeen City Centre); Aberdeen City (Scotland),Major Town Centre,Scotland,0.169,0.9719793591556448,0.972,Output Data/Figures/profile_11_orientation_entropy.png
