@@ -1,4 +1,4 @@
-indicator,tier_scope,eligible_N,valid_N,missing_pct,median,iqr_25,iqr_75,rho_area_all_eligible,rho_area_street_centres,within_tier_abs_rho_area,rho_sidewalk_mapped,eta2_region,cliffs_delta_hierarchy,cliffs_delta_rp_vs_hs
+indicator,tier_scope,eligible_N,valid_N,missing_pct,median,iqr_25,iqr_75,rho_area_all_eligible,rho_area_street_centres,within_tier_abs_rho_area,rho_sidewalk_mapped,epsilon2_region,cliffs_delta_hierarchy,cliffs_delta_rp_vs_hs
 walk_reach_400,"Universal Core (N = 9,623)",9623,9617,0.06,0.628,0.545,0.696,0.203,0.135,0.139,-0.156,0.027,0.351,-0.687
 drive_reach_400,"Universal Core (N = 9,623)",9623,9507,1.21,0.627,0.536,0.707,0.176,0.195,0.18,-0.04,0.007,0.26,-0.59
 arterial_share,"Universal Core (N = 9,623)",9623,9572,0.53,0.253,0.058,0.37,0.227,0.125,0.088,0.099,0.013,0.149,0.444

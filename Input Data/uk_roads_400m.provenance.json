@@ -1,0 +1,11 @@
+{
+  "source_pbf_filename": "united-kingdom-latest.osm.pbf",
+  "source_pbf_size_bytes": 2281092125,
+  "source_pbf_modified_utc": "2026-11-05T16:12:58Z",
+  "source_pbf_fingerprint": "d07046874ca657c9",
+  "osm_extract_provider": "Geofabrik GmbH (https://download.geofabrik.de/europe/united-kingdom.html)",
+  "osm_licence": "Open Data Commons Open Database License (ODbL 1.0)",
+  "osm_attribution": "Map data \u00a9 OpenStreetMap contributors (https://www.openstreetmap.org/copyright)",
+  "extracted_segments_count": 2646803,
+  "crs": "EPSG:27700"
+}

@@ -60,7 +60,7 @@ Our graph construction pipeline addresses these three issues in sequence:
 
 ### 2.2 Validation Scorecard
 
-| Indicator | Scope (`N`) | Missing (%) | Median (IQR) | $\rho_{\text{area}}$ (Street Centres) | Within-Tier $\|\rho_{\text{area}}\|$ | $\rho_{\text{sidewalk}}$ | $\eta^2_{\text{region}}$ | Cliff's $\delta$ (Hierarchy) | Cliff's $\delta$ (Retail Park vs. High Street) |
+| Indicator | Scope (`N`) | Missing (%) | Median (IQR) | $\rho_{\text{area}}$ (Street Centres) | Within-Tier $\|\rho_{\text{area}}\|$ | $\rho_{\text{sidewalk}}$ | $\varepsilon^2_{\text{region}}$ | Cliff's $\delta$ (Hierarchy) | Cliff's $\delta$ (Retail Park vs. High Street) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `walk_reach_400` | Universal (`9,623`) | 0.06% | 0.628 (0.545 to 0.696) | +0.135 | 0.139 | -0.156 | 0.027 | +0.351 | -0.687 |
 | `drive_reach_400` | Universal (`9,623`) | 1.21% | 0.627 (0.536 to 0.707) | +0.195 | 0.180 | -0.040 | 0.007 | +0.260 | -0.590 |
@@ -73,6 +73,8 @@ Our graph construction pipeline addresses these three issues in sequence:
 | `flow_concentration` | Universal (`9,623`) | 0.77% | 0.442 (0.392 to 0.494) | +0.261 | 0.194 | +0.257 | 0.010 | +0.563 | +0.188 |
 | `walk_block_median_area_m2` | Street-Grid (`1,521`) | 0.07% | 6,910 $\text{m}^2$ (4,696 to 10,338) | -0.073 | 0.081 | +0.026 | 0.070 | -0.418 | n/a |
 | `orientation_entropy` | Street-Grid (`1,521`) | 0.00% | 0.920 (0.877 to 0.948) | +0.311 | 0.134 | -0.045 | 0.047 | +0.191 | n/a |
+
+*Note: $\varepsilon^2_{\text{region}} = (H - k + 1)/(n - k)$ reports the non-parametric Kruskal-Wallis epsilon-squared effect size across UK regions.*
 
 ### 2.3 Parameter Perturbation Robustness (`Validation_Robustness.csv`)
 
@@ -92,7 +94,12 @@ We test rank stability using Spearman correlations ($\rho$) on a stratified rand
 | `walk_block_median_area_m2` | 525 | 0.849 | 0.915 | 1.000 | 1.000 | 0.909 | **0.849** |
 | `orientation_entropy` | 525 | 0.940 | 0.959 | 0.992 | 0.991 | 0.967 | **0.940** |
 
-Several validation patterns are worth keeping in mind when using the dataset. Across traditional street centres, `walk_meshedness` ($\rho_{\text{area}} = +0.320$, within-tier $|\rho_{\text{area}}| = 0.189$) and `orientation_entropy` ($\rho_{\text{area}} = +0.311$, within-tier $|\rho_{\text{area}}| = 0.134$) retain moderate positive associations with polygon area because larger town and city centres naturally span more street blocks and directional alignments than compact local centres; models of retail performance should control for hierarchy tier or log-area when using these two metrics. In addition, `flow_concentration` shows near-zero regional variance ($\eta^2_{\text{region}} = 0.010$) but carries the largest residual correlation with `sidewalk_mapped_share` ($\rho_{\text{sidewalk}} = +0.257$), reflecting the fact that dense urban centres with more detailed OSM footway mapping also tend to have stronger hierarchical corridor spines. Finally, `walk_sightline_continuity` is stable across parameter changes ($\min \rho = 0.859$) and independent of centre size ($\rho_{\text{area}} = -0.072$), but shows virtually no contrast across the retail hierarchy ($\delta = -0.014$) and should be treated as a descriptive measure of street alignment rather than a typology classifier.
+Several validation patterns and scope boundaries should be kept in mind when using the dataset:
+
+- **Scope of validation:** The scorecard and perturbation checks evaluate completeness, ordinal rank stability across buffer and consolidation choices, independence from polygon area and sidewalk mapping, and contrasts across official retail centre classifications. Note that while exterior-ring and compositional indicators have high rank stability ($\min \rho \ge 0.932$), internal topological and block indicators (`walk_meshedness` at $\min \rho = 0.841$, `walk_block_median_area_m2` at $\min \rho = 0.849$, and `walk_sightline_continuity` at $\min \rho = 0.859$) show moderate sensitivity to the core readout buffer radius (`50 m` vs. `100 m`). Furthermore, these checks support using the variables as **descriptive street-network morphology indicators**; they do not evaluate agreement against external behavioural or economic outcomes such as pedestrian footfall, retail sales, vacancy rates, or observed shopper trajectories.
+- **Moderate area association in `walk_meshedness` and `orientation_entropy`:** Across traditional street centres, `walk_meshedness` ($\rho_{\text{area}} = +0.320$, within-tier $|\rho_{\text{area}}| = 0.189$) and `orientation_entropy` ($\rho_{\text{area}} = +0.311$, within-tier $|\rho_{\text{area}}| = 0.134$) retain moderate positive correlations with polygon area because larger town and city centres naturally span more street blocks and directional alignments than compact local centres; models of retail performance should control for hierarchy tier or log-area when using these two metrics.
+- **Residual sidewalk-mapping association in `flow_concentration`:** While `flow_concentration` has near-zero regional variance ($\varepsilon^2_{\text{region}} = 0.010$), it carries the largest residual correlation with `sidewalk_mapped_share` ($\rho_{\text{sidewalk}} = +0.257$), reflecting the fact that dense urban centres with more detailed OSM footway mapping also tend to have stronger hierarchical corridor spines.
+- **Descriptive role of `walk_sightline_continuity`:** `walk_sightline_continuity` is independent of centre size ($\rho_{\text{area}} = -0.072$), but shows virtually no contrast across the retail hierarchy ($\delta = -0.014$) and should be treated as a descriptive measure of axial street alignment rather than a typology classifier.
 
 ----
 
@@ -146,7 +153,7 @@ The UK median is `0.29` (IQR `0.19` to `0.41`), and the indicator is nearly orth
 
 Dedicated pedestrian-way share quantifies how much of a retail centre's walkable network is reserved for pedestrians away from motor traffic (Gehl 2010). After applying our bearing-aligned sidewalk filter to remove roadside pavements and crossings, we sum the length of `pedestrian`, `footway`, `path`, and `steps` ways inside the 100 m core buffer and divide by the total non-sidewalk walkable network length. Because the numerator includes traffic-free footpaths, shopping arcades, and off-road cut-throughs alongside formal `highway=pedestrian` streets, the variable reflects overall dedicated pedestrian-way provision rather than solely pedestrianised high-street frontage.
 
-Removing parallel sidewalks eliminates regional OSM pavement-mapping bias ($\rho_{\text{sidewalk}} = +0.025$, $\eta^2_{\text{region}} = 0.026$) and reveals a strong gradient across the retail hierarchy (Cliff's $\delta = +0.668$ between Regional Centres and Small Local Centres). Centres with high scores (such as Thetford at `0.34`, or major regional shopping cores) offer dedicated traffic-free precincts and pedestrian priority zones that support lingering and comparison shopping, whereas low-scoring centres (`< 0.08`) confine pedestrians almost entirely to footpaths alongside vehicle roads.
+Removing parallel sidewalks eliminates regional OSM pavement-mapping bias ($\rho_{\text{sidewalk}} = +0.025$, $\varepsilon^2_{\text{region}} = 0.026$) and reveals a strong gradient across the retail hierarchy (Cliff's $\delta = +0.668$ between Regional Centres and Small Local Centres). Centres with high scores (such as Thetford at `0.34`, or major regional shopping cores) offer dedicated traffic-free precincts and pedestrian priority zones that support lingering and comparison shopping, whereas low-scoring centres (`< 0.08`) confine pedestrians almost entirely to footpaths alongside vehicle roads.
 
 ![Dedicated Pedestrian-Way Share Profiles](Output%20Data/Figures/profile_05_carfree_share.png)
 
@@ -188,7 +195,7 @@ The national median is `0.90` (IQR `0.83` to `0.95`), and the metric is independ
 
 ### 3.9 Through-Movement Flow Concentration (`flow_concentration`)
 
-Through-movement flow concentration measures whether local pedestrian shortest paths are channelled onto a single dominant high-street spine or spread evenly across a multi-street network ([Freeman 1977](https://doi.org/10.2307/3033543); [Porta et al. 2006a](https://doi.org/10.1068/b32045)). Using `compute_distance_limited_edge_betweenness` on the 400 m street graph (excluding off-street `highway=service` ways), we run Dijkstra shortest-path trees from every node with an explicit `400.0 m` metric distance limit so only walk trips up to 400 m in length are counted. We then compute the Gini coefficient of those edge betweenness counts across street segments inside the 100 m core buffer.
+Through-movement flow concentration measures whether local pedestrian shortest paths are channelled onto a single dominant high-street spine or spread evenly across a multi-street network ([Freeman 1977](https://doi.org/10.2307/3033543); [Brandes 2001](https://doi.org/10.1080/0022250X.2001.9990249); [Porta et al. 2006a](https://doi.org/10.1068/b32045)). Using `compute_distance_limited_edge_betweenness` on the 400 m street graph (excluding off-street `highway=service` ways), we compute exact shortest-path distances from every node up to a `400.0 m` metric distance limit via `scipy.sparse.csgraph.dijkstra`, and then run weighted, cutoff-aware Brandes ([2001](https://doi.org/10.1080/0022250X.2001.9990249), [2008](https://doi.org/10.1016/j.socnet.2007.11.001)) forward path counting ($\sigma$) and backward dependency accumulation across all equal-shortest predecessors (within a $10^{-7}\text{ m}$ tie tolerance). We then compute the Gini coefficient of those edge betweenness scores across street segments inside the 100 m core buffer.
 
 Across UK retail centres, the median Gini concentration is `0.44` (IQR `0.39` to `0.49`), rising substantially toward the top of the retail hierarchy (Cliff's $\delta = +0.563$). For retail centres, lower values (`0.41` in Arnold, Gedling) indicate compact, balanced town centres where movement is shared across several parallel shopping streets. Higher values (`0.57` around St James Quarter in Edinburgh) identify centres where local pedestrian trajectories funnel disproportionately onto a primary arterial or pedestrianised spine, creating a sharp hierarchy between prime pitch frontage and quieter secondary backstreets.
 
@@ -216,11 +223,22 @@ Across traditional street centres, the median entropy is `0.920` (IQR `0.877` to
 
 ----
 
-## 4. References
+## 4. Data Provenance, Attribution, and Licensing
+
+- **OpenStreetMap Extract Version and Provenance:** Street and footpath geometries (`2,646,803` highway segments within 400 m of UK retail centres in `Input Data/uk_roads_400m.parquet`) were extracted from the Geofabrik United Kingdom OpenStreetMap PBF extract (`united-kingdom-latest.osm.pbf`, size `2,281,092,125` bytes, timestamp `2026-11-05T16:12:58Z`, SHA-256 header/stat fingerprint `d07046874ca657c9`, recorded in [`Input Data/uk_roads_400m.provenance.json`](Input%20Data/uk_roads_400m.provenance.json)).
+- **OpenStreetMap Attribution and Licence:** Street network data is copyright **© OpenStreetMap contributors** ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright)) and is licensed under the [Open Data Commons Open Database License (ODbL 1.0)](https://opendatacommons.org/licenses/odbl/1-0/). Any derivative datasets, maps, or publications using the extracted highway data or derived network indicators must credit `© OpenStreetMap contributors` and comply with ODbL 1.0 terms.
+- **Retail Centre Boundaries Attribution:** UK retail centre boundaries and hierarchical classifications (`N = 9,623` polygons in `Input Data/retailcentre_bounds_uk.gpkg`) are provided by the [Geographic Data Service (GeoDS)](https://geods.ac.uk) [Retail Centre Boundaries](https://data.geods.ac.uk/dataset/retail-centre-boundaries) dataset.
+- **Administrative Boundary Basemap Attribution:** Local Authority District boundaries in `Input Data/uk_basemap_boundaries.gpkg` contain public sector information licensed under the UK Open Government Licence v3.0 (Office for National Statistics / OS OpenData).
+
+----
+
+## 5. References
 
 - **Appleyard, D. (1981).** *Livable Streets*. University of California Press, Berkeley.
 - **Boeing, G. (2019).** Urban spatial order: Street network orientation, configuration, and entropy. *Applied Network Science*, 4(1), 67. [https://doi.org/10.1007/s41109-019-0189-1](https://doi.org/10.1007/s41109-019-0189-1)
 - **Boeing, G. (2025).** Topological graph simplification Solutions to the street intersection miscount problem. *Transactions in GIS*, 29(1), e70037. [https://doi.org/10.1111/tgis.70037](https://doi.org/10.1111/tgis.70037)
+- **Brandes, U. (2001).** A faster algorithm for betweenness centrality. *Journal of Mathematical Sociology*, 25(2), 163-177. [https://doi.org/10.1080/0022250X.2001.9990249](https://doi.org/10.1080/0022250X.2001.9990249)
+- **Brandes, U. (2008).** On variants of shortest-path betweenness centrality and their generic computation. *Social Networks*, 30(2), 136-145. [https://doi.org/10.1016/j.socnet.2007.11.001](https://doi.org/10.1016/j.socnet.2007.11.001)
 - **Buhl, J., Gautrais, J., Reeves, N., Solé, R. V., Valverde, S., Kuntz, P., & Theraulaz, G. (2006).** Topological patterns in street networks of self-organized urban settlements. *The European Physical Journal B*, 49(4), 513-522. [https://doi.org/10.1140/epjb/e2006-00085-1](https://doi.org/10.1140/epjb/e2006-00085-1)
 - **Freeman, L. C. (1977).** A set of measures of centrality based on betweenness. *Sociometry*, 40(1), 35-41. [https://doi.org/10.2307/3033543](https://doi.org/10.2307/3033543)
 - **Gehl, J. (2010).** *Cities for People*. Island Press, Washington, DC.
@@ -233,3 +251,4 @@ Across traditional street centres, the median entropy is `0.920` (IQR `0.877` to
 - **Porta, S., Crucitti, P., & Latora, V. (2006b).** The network analysis of urban streets: A dual approach. *Physica A: Statistical Mechanics and its Applications*, 369(2), 853-866. [https://doi.org/10.1016/j.physa.2005.12.063](https://doi.org/10.1016/j.physa.2005.12.063)
 - **Sevtsuk, A., & Mekonnen, M. (2012).** Urban network analysis: A new toolbox for ArcGIS. *Revue Internationale de Géomatique*, 22(2), 287-305. [https://doi.org/10.3166/rig.22.287-305](https://doi.org/10.3166/rig.22.287-305)
 - **Siksna, A. (1997).** The effects of block size and form in North American and Australian city centres. *Urban Morphology*, 1(1), 19-33. [https://doi.org/10.51347/jum.v1i1.4048](https://doi.org/10.51347/jum.v1i1.4048)
+

@@ -68,7 +68,7 @@ def cliffs_delta(x, y):
     return float(2.0 * u / (len(x) * len(y)) - 1.0)
 
 
-def regional_eta_squared(df, col):
+def regional_epsilon_squared(df, col):
     if 'Region_NM' not in df.columns:
         return np.nan
     sub = df[['Region_NM', col]].dropna()
@@ -115,7 +115,7 @@ def compute_scorecard(df):
 
         sw_valid = valid.dropna(subset=['sidewalk_mapped_share'])
         rho_sw, _ = spearmanr(sw_valid[ind], sw_valid['sidewalk_mapped_share'])
-        eta2_reg = regional_eta_squared(valid, ind)
+        eps2_reg = regional_epsilon_squared(valid, ind)
 
         d_reg_local = cliffs_delta(reg[ind], slc[ind]) if ind in UNIVERSAL_INDICATORS else cliffs_delta(reg[ind], dist_loc[ind])
         d_rp_hs = cliffs_delta(rp[ind], hs[ind]) if ind in UNIVERSAL_INDICATORS else np.nan
@@ -133,10 +133,11 @@ def compute_scorecard(df):
             'rho_area_street_centres': round(float(rho_area_non_slc), 3),
             'within_tier_abs_rho_area': round(mean_abs_wt, 3),
             'rho_sidewalk_mapped': round(float(rho_sw), 3),
-            'eta2_region': round(float(eta2_reg), 3) if np.isfinite(eta2_reg) else np.nan,
+            'epsilon2_region': round(float(eps2_reg), 3) if np.isfinite(eps2_reg) else np.nan,
             'cliffs_delta_hierarchy': round(float(d_reg_local), 3) if np.isfinite(d_reg_local) else np.nan,
             'cliffs_delta_rp_vs_hs': round(float(d_rp_hs), 3) if np.isfinite(d_rp_hs) else np.nan,
         })
+
 
     return pd.DataFrame(rows)
 

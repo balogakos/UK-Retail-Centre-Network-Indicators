@@ -339,10 +339,11 @@ def _gini(values):
 
 
 def compute_distance_limited_edge_betweenness(g, limit_m=400.0):
-    """Compute shortest-path edge betweenness restricted strictly to paths <= `limit_m` metres.
+    """Compute weighted Brandes shortest-path edge betweenness restricted strictly to paths <= `limit_m` metres.
 
-    Uses `scipy.sparse.csgraph.dijkstra` with `limit=limit_m` (in metres) and Brandes
-    back-propagation along the shortest-path predecessor trees.
+    Uses `scipy.sparse.csgraph.dijkstra` with `limit=limit_m` (in metres) for exact shortest-path
+    distances, then performs full Brandes (2001, 2008) forward path counting (`sigma`) and backward
+    dependency accumulation (`dep`) across ALL equal-shortest-path predecessors (within 1e-7 m tolerance).
     """
     n_nodes = g['N']
     eu, ev, elen = g['eu'], g['ev'], g['elen']
@@ -350,32 +351,53 @@ def compute_distance_limited_edge_betweenness(g, limit_m=400.0):
     if m == 0 or n_nodes < 2:
         return np.zeros(m, dtype=float)
 
-    dist, pred = dijkstra(g['csr'], directed=False, limit=limit_m, return_predecessors=True)
-
-    eb_pair = {}
+    w_edge = np.maximum(elen, 0.5)
+    adj = [[] for _ in range(n_nodes)]
     for k in range(m):
-        u, v = int(eu[k]), int(ev[k])
-        eb_pair[u * n_nodes + v] = k
-        eb_pair[v * n_nodes + u] = k
+        u, v, w = int(eu[k]), int(ev[k]), float(w_edge[k])
+        adj[u].append((v, w, k))
+        adj[v].append((u, w, k))
 
+    dist = dijkstra(g['csr'], directed=False, limit=limit_m, return_predecessors=False)
     eb = np.zeros(m, dtype=float)
+    tol = 1e-7
+
     for s in range(n_nodes):
         d_s = dist[s]
-        p_s = pred[s]
-        valid = np.where(np.isfinite(d_s) & (p_s >= 0))[0]
-        if len(valid) == 0:
+        valid = np.where(np.isfinite(d_s))[0]
+        if len(valid) <= 1:
             continue
-        order = valid[np.argsort(-d_s[valid])].tolist()
-        p_list = p_s.tolist()
+        order = valid[np.argsort(d_s[valid], kind='mergesort')].tolist()
+        d_list = d_s.tolist()
+        sigma = [0.0] * n_nodes
+        sigma[s] = 1.0
+        preds = [[] for _ in range(n_nodes)]
+
+        for u in order:
+            su = sigma[u]
+            if su == 0.0:
+                continue
+            du = d_list[u]
+            for w, w_len, k in adj[u]:
+                dw = d_list[w]
+                if dw > du and abs((du + w_len) - dw) <= tol * max(1.0, dw):
+                    sigma[w] += su
+                    preds[w].append((u, k))
+
         dep = [0.0] * n_nodes
-        for w in order:
-            p = p_list[w]
-            c = 1.0 + dep[w]
-            dep[p] += c
-            idx_e = eb_pair.get(p * n_nodes + w)
-            if idx_e is not None:
-                eb[idx_e] += c
+        for w in reversed(order):
+            if w == s:
+                continue
+            sw = sigma[w]
+            if sw > 0.0:
+                coeff = (1.0 + dep[w]) / sw
+                for u, k in preds[w]:
+                    c = sigma[u] * coeff
+                    dep[u] += c
+                    eb[k] += c
+
     return eb * 0.5
+
 
 
 def compute_ring_reach(g, poly, src_buf_m, limit_m):
