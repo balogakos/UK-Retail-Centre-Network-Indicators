@@ -3,11 +3,11 @@
 
 ----
 
-Welcome to the UK Retail Centre Street-Network Indicators repository. Here we provide open-access street-network morphology indicators, validation outputs, and reproducible Python code for the 9,623 retail centres in the CDRC Retail Centre Boundaries data product.
+Welcome to the UK Retail Centre Street-Network Indicators repository. Here we provide open-access street-network morphology indicators, validation outputs, and reproducible Python code for the 9,623 UK retail centres delineated by the [Geographic Data Service (GeoDS)](https://geods.ac.uk).
 
 ## 1. Overview & Data Products
 
-Indicators are developed for the UK release of the CDRC [Retail Centre Boundaries](https://data.cdrc.ac.uk/dataset/retail-centre-boundaries) dataset (`N = 9,623` retail centres in `EPSG:27700`) paired with multimodal street and footpath networks extracted from OpenStreetMap (`united-kingdom-latest.osm.pbf`).
+Indicators are developed for the UK release of the Geographic Data Service ([GeoDS](https://geods.ac.uk)) [Retail Centre Boundaries](https://data.geods.ac.uk/dataset/retail-centre-boundaries) dataset (`N = 9,623` retail centres in `EPSG:27700`) paired with multimodal street and footpath networks extracted from OpenStreetMap (`united-kingdom-latest.osm.pbf`).
 
 To prevent confounding from OpenStreetMap pavement-mapping habits, polygon size, and off-street car-park loops, the indicators are constructed using a two-tier architecture following a 6-step validation framework (concept definition, operationalisation, parameter robustness, discriminant validity against polygon area and sidewalk mapping, convergent validity across retail hierarchy tiers, and exploratory outcome testing):
 
@@ -20,7 +20,7 @@ To prevent confounding from OpenStreetMap pavement-mapping habits, polygon size,
 
 2. **Street-Grid Set (2 Indicators — 1,521 Traditional Street Centres):**
    - **Block Scale & Grid Order:** `walk_block_median_area_m2`, `orientation_entropy`
-   - *Scope note:* Consistent with [Ballantyne et al. (2022)](https://github.com/patrickballantyne/CDRC-Retail-Indicators), these two street-grid metrics are computed for traditional street-network centres (`Regional Centre`, `Major Town Centre`, `Town Centre`, `Market Town`, `District Centre`, and `Local Centre`; `N = 1,521`) and set to `NaN` for `Small Local Centres` (which lack sufficient edges to populate directional histograms or enclosed blocks) and out-of-town `Retail Parks` / `Shopping Centres`.
+   - *Scope note:* These two street-grid metrics are computed for traditional street-network centres (`Regional Centre`, `Major Town Centre`, `Town Centre`, `Market Town`, `District Centre`, and `Local Centre`; `N = 1,521`) and set to `NaN` for `Small Local Centres` (which lack sufficient edges to populate directional histograms or enclosed blocks) and out-of-town `Retail Parks` / `Shopping Centres`.
 
 ### 1.1 Download the Indicators
 
@@ -81,7 +81,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.1 `walk_reach_400` — Walkable Neighbourhood Embeddedness
 
-- **Concept:** External pedestrian integration into the surrounding catchment ring ([Hillier 1996](https://discovery.ucl.ac.uk/id/eprint/3881/); [Sevtsuk & Mekonnen 2012](https://www.sciencedirect.com/science/article/pii/S016920461200059X)).
+- **Concept:** External pedestrian integration into the surrounding catchment ring ([Hillier 1996](https://discovery.ucl.ac.uk/id/eprint/3881/); [Sevtsuk & Mekonnen 2012](https://doi.org/10.3166/rig.22.287-305)).
 - **Construction:** Using multi-source Dijkstra shortest paths starting from all walkable nodes within 30 m of the retail centre polygon, `walk_reach_400` measures the proportion of walkable street length in the **exterior 0–400 m ring outside the centre boundary** that is reachable within a 400 m network walk. Restricting the denominator strictly to the exterior ring eliminates mechanical dependence on the polygon's internal area.
 - **Interpretation:** Values near `0.75–0.85` indicate a high street seamlessly stitched into surrounding residential streets. Values below `0.50` indicate an enclave severed from its surroundings by rivers, railways, or arterial slip roads (Cliff's $\delta = -0.720$ comparing Retail Parks to High Streets).
 
@@ -97,7 +97,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.2 `drive_reach_400` — Vehicular Neighbourhood Embeddedness
 
-- **Concept:** External vehicular integration into the surrounding 400 m road network.
+- **Concept:** External vehicular integration into the surrounding 400 m road network ([Sevtsuk & Mekonnen 2012](https://doi.org/10.3166/rig.22.287-305)).
 - **Construction:** Identical exterior-ring formulation to `walk_reach_400`, evaluated on the consolidated public motorised road graph (`DRIVE_CLASSES`, consolidated at 10 m).
 - **Interpretation:** Captures how directly the surrounding road fabric connects into the retail centre across all perimeter approaches ($\min \rho = 0.99$ across parameter perturbations; Cliff's $\delta = -0.591$ between single-entry Retail Parks and multi-approach High Streets).
 
@@ -113,7 +113,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.3 `arterial_share` — Arterial Traffic Dominance & Severance
 
-- **Concept:** Heavy-traffic road allocation and pedestrian severance ([Appleyard 1981](https://www.ucpress.edu/); [Marshall 2005](https://www.routledge.com/Streets-and-Patterns/Marshall/p/book/9780415317504)).
+- **Concept:** Heavy-traffic road allocation and pedestrian severance (Appleyard 1981; [Marshall 2005](https://doi.org/10.4324/9780203589397)).
 - **Construction:** Proportion of public drivable road length within the 100 m core readout buffer classified as `motorway`, `trunk`, `primary`, or `secondary` (including link roads).
 - **Interpretation:** Differentiates neighbourhood shopping streets built along quiet local/tertiary streets (`< 0.10`) from centres straddling major trunk/A-road corridors or arterial junctions (`> 0.50`; Cliff's $\delta = +0.444$ for Retail Parks vs. High Streets).
 
@@ -129,7 +129,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.4 `service_share` — Car-Park & Servicing Circulation Share
 
-- **Concept:** Dominance of off-street car-park aisles, loading bays, and internal retail-park access roads.
+- **Concept:** Dominance of off-street car-park aisles, loading bays, and internal retail-park access roads ([Marshall 2005](https://doi.org/10.4324/9780203589397)).
 - **Construction:** Length of public/permissive `highway=service` ways (excluding `service=driveway`) divided by total motorised road length (`DRIVE_CLASSES + service`) within the 100 m core buffer.
 - **Interpretation:** Provides strong discrimination between traditional street-frontage centres and car-park-led retail formats (Cliff's $\delta = +0.689$ between Retail Parks and High Streets; $\rho_{\text{area}} = +0.086$ across street centres).
 
@@ -145,7 +145,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.5 `carfree_share` — True Pedestrianised Street Share
 
-- **Concept:** Dedicated car-free pedestrian space (pedestrianised high streets, precincts, arcades, and off-road footpaths) net of roadside pavements.
+- **Concept:** Dedicated car-free pedestrian space (pedestrianised high streets, precincts, arcades, and off-road footpaths) net of roadside pavements (Gehl 2010).
 - **Construction:** Length of `pedestrian`, `footway`, `path`, and `steps` ways within the 100 m core **after stripping parallel roadside sidewalks and crossings**, divided by total non-sidewalk walkable network length.
 - **Interpretation:** Eliminates regional OSM sidewalk-mapping bias ($\rho_{\text{sidewalk}} = -0.044$; regional $\eta^2$ reduced from `0.076` to `0.016`) while strongly separating pedestrianised Regional and Major Town Centres from local roadside parades (Cliff's $\delta = +0.677$).
 
@@ -161,7 +161,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.6 `walk_median_edge_len_m` — Walkable Street Grain (Intersection Spacing)
 
-- **Concept:** Urban street grain and intersection frequency ([Jacobs 1961](https://www.penguinrandomhouse.com/books/86058/the-death-and-life-of-great-american-cities-by-jane-jacobs/); [Siksna 1997](https://www.tandfonline.com/doi/abs/10.1057/udi.1997.3)).
+- **Concept:** Urban street grain and intersection frequency (Jacobs 1961; [Siksna 1997](https://doi.org/10.51347/jum.v1i1.4048)).
 - **Construction:** Median length (in metres) of consolidated walkable street edges intersecting the 100 m core readout buffer.
 - **Interpretation:** Lower values (`28–36 m`) indicate a fine-grained network with frequent turning opportunities and closely spaced intersections; higher values (`> 45 m`) indicate coarse, long-block road layouts (Cliff's $\delta = -0.434$ comparing Regional Centres to Small Local Centres).
 
@@ -177,7 +177,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.7 `walk_meshedness` — Street-Network Meshedness (Loop Redundancy)
 
-- **Concept:** Planar cycle density and route redundancy ([Buhl et al. 2006](https://link.springer.com/article/10.1140/epjb/e2006-00085-1)).
+- **Concept:** Planar cycle density and route redundancy ([Buhl et al. 2006](https://doi.org/10.1140/epjb/e2006-00085-1)).
 - **Construction:** Evaluated on the consolidated street graph after removing off-street car-park aisles (`highway=service`) and parallel sidewalks:
   $$\alpha = \max\left(0,\; \frac{E - N + C}{2N - 5}\right)$$
   where $E$, $N$, and $C$ denote edges, nodes, and connected components within the 100 m core.
@@ -195,7 +195,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.8 `walk_sightline_continuity` — Through-Junction Angular Continuity
 
-- **Concept:** Visual legibility and axial street continuation across intersections ([Hillier & Iida 2005](https://link.springer.com/chapter/10.1007/11556114_30); [Porta et al. 2006](https://journals.sagepub.com/doi/10.1068/b32045)).
+- **Concept:** Visual legibility and axial street continuation across intersections ([Hillier & Iida 2005](https://doi.org/10.1007/11556114_30); [Porta et al. 2006b](https://doi.org/10.1016/j.physa.2005.12.063)).
 - **Construction:** Proportion of junctions of degree $k \ge 3$ within the 100 m core that possess at least one pair of incident edges continuing straight through the junction within a $\le 20^\circ$ angular deflection.
 - **Interpretation:** High scores (`> 0.92`) indicate continuous axial thoroughfares; lower scores (`< 0.82`) indicate fragmented layouts dominated by offset T-junctions and cranked turns. Size-invariant ($\rho_{\text{area}} = -0.038$ across street centres).
 
@@ -211,7 +211,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.9 `flow_concentration` — Through-Movement Hierarchy (Betweenness Gini)
 
-- **Concept:** Concentration of shortest-path pedestrian movement onto a single spine versus dispersion across a multi-street grid ([Porta et al. 2006](https://journals.sagepub.com/doi/10.1068/b32045)).
+- **Concept:** Concentration of shortest-path pedestrian movement onto a single spine versus dispersion across a multi-street grid ([Freeman 1977](https://doi.org/10.2307/3033543); [Porta et al. 2006a](https://doi.org/10.1068/b32045)).
 - **Construction:** Gini coefficient of local shortest-path edge betweenness (400 m path cutoff on the 400 m context graph) evaluated across walkable edges within the 100 m core.
 - **Interpretation:** Lower values (`~0.42–0.45`) indicate balanced multi-street grids where movement distributes across parallel routes (e.g. Stockton-on-Tees); higher values (`> 0.55`) indicate dendritic or ribbon centres where all local movement funnels along a single main corridor.
 
@@ -227,7 +227,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.10 `walk_block_median_area_m2` — Enclosed Urban Block Area *(Street-Grid Set)*
 
-- **Concept:** Physical scale of enclosed urban blocks ([Siksna 1997](https://www.tandfonline.com/doi/abs/10.1057/udi.1997.3); [Porta et al. 2014](https://journals.sagepub.com/doi/10.1068/b130048p)).
+- **Concept:** Physical scale of enclosed urban street blocks ([Siksna 1997](https://doi.org/10.51347/jum.v1i1.4048); [Louf & Barthelemy 2014](https://doi.org/10.1098/rsif.2014.0924)).
 - **Construction:** Computed for the 1,521 traditional street centres (`Regional`, `Major Town`, `Town`, `Market Town`, `District`, and `Local Centres`). Ground-level street segments (with `highway=service` car-park lanes and parallel sidewalks removed) are polygonised via `shapely.ops.polygonize`. Sliver traffic islands (thickness $4A/P < 20\text{ m}$) are filtered out, and the median area ($\text{m}^2$) of blocks whose interior point falls within the 100 m core is returned.
 - **Interpretation:** Completely independent of centre polygon size ($\rho_{\text{area}} = -0.075$) and OSM sidewalk mapping ($\rho_{\text{sidewalk}} = +0.001$), with `0.07%` missingness across the 1,521 street centres. Historic and regional cores exhibit compact permeable blocks (`3,000–5,000` $\text{m}^2$; Cliff's $\delta = -0.449$ vs. District/Local Centres), whereas suburban local centres exhibit large superblocks (`> 14,000` $\text{m}^2$).
 
@@ -243,7 +243,7 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 ### 3.11 `orientation_entropy` — Street Bearing Orientation Entropy *(Street-Grid Set)*
 
-- **Concept:** Geometric alignment of street bearings versus multi-directional irregularity ([Boeing 2019](https://link.springer.com/article/10.1007/s41109-019-0189-1)).
+- **Concept:** Geometric alignment of street bearings versus multi-directional irregularity ([Boeing 2019](https://doi.org/10.1007/s41109-019-0189-1)).
 - **Construction:** Computed for the 1,521 traditional street centres on the car-park-cleaned street graph. Edge bearings (in both directions) are weighted by segment length into 36 compass bins of $10^\circ$, and Shannon entropy is normalised by $\ln(36) \in [0, 1]$.
 - **Interpretation:** Low entropy (`< 0.83`) identifies orthogonal gridiron layouts aligned along two perpendicular axes (e.g. Victorian terraced grids along Stockport Road, Manchester); high entropy (`> 0.96`) identifies radial or multi-directional street patterns (e.g. Camberwell, London). Restricting to the 1,521 street centres eliminates small-sample histogram bias (`0.00%` missing; within-tier $|\rho_{\text{area}}| = 0.142$).
 
@@ -254,3 +254,22 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 | **High (92nd pct — Multi-Directional)** | 519 | Camberwell, Southwark, London | District Centre | 0.156 | **0.970** |
 
 ![Street Bearing Orientation Entropy Profiles](Output%20Data/Figures/profile_11_orientation_entropy.png)
+
+----
+
+## 4. References
+
+- **Appleyard, D. (1981).** *Livable Streets*. University of California Press, Berkeley.
+- **Boeing, G. (2019).** Urban spatial order: Street network orientation, configuration, and entropy. *Applied Network Science*, 4(1), 67. [https://doi.org/10.1007/s41109-019-0189-1](https://doi.org/10.1007/s41109-019-0189-1)
+- **Buhl, J., Gautrais, J., Reeves, N., Solé, R. V., Valverde, S., Kuntz, P., & Theraulaz, G. (2006).** Topological patterns in street networks of self-organized urban settlements. *The European Physical Journal B*, 49(4), 513–522. [https://doi.org/10.1140/epjb/e2006-00085-1](https://doi.org/10.1140/epjb/e2006-00085-1)
+- **Freeman, L. C. (1977).** A set of measures of centrality based on betweenness. *Sociometry*, 40(1), 35–41. [https://doi.org/10.2307/3033543](https://doi.org/10.2307/3033543)
+- **Gehl, J. (2010).** *Cities for People*. Island Press, Washington, DC.
+- **Hillier, B. (1996).** *Space is the Machine: A Configurational Theory of Architecture*. Cambridge University Press, Cambridge. [https://discovery.ucl.ac.uk/id/eprint/3881/](https://discovery.ucl.ac.uk/id/eprint/3881/)
+- **Hillier, B., & Iida, S. (2005).** Network and psychological effects in urban movement. In A. G. Cohn & D. M. Mark (Eds.), *Spatial Information Theory (COSIT 2005)*, Lecture Notes in Computer Science, vol. 3693 (pp. 475–490). Springer. [https://doi.org/10.1007/11556114_30](https://doi.org/10.1007/11556114_30)
+- **Jacobs, J. (1961).** *The Death and Life of Great American Cities*. Random House, New York.
+- **Louf, R., & Barthelemy, M. (2014).** A typology of street patterns. *Journal of the Royal Society Interface*, 11(101), 20140924. [https://doi.org/10.1098/rsif.2014.0924](https://doi.org/10.1098/rsif.2014.0924)
+- **Marshall, S. (2005).** *Streets and Patterns*. Routledge, London. [https://doi.org/10.4324/9780203589397](https://doi.org/10.4324/9780203589397)
+- **Porta, S., Crucitti, P., & Latora, V. (2006a).** The network analysis of urban streets: A primal approach. *Environment and Planning B: Planning and Design*, 33(5), 705–725. [https://doi.org/10.1068/b32045](https://doi.org/10.1068/b32045)
+- **Porta, S., Crucitti, P., & Latora, V. (2006b).** The network analysis of urban streets: A dual approach. *Physica A: Statistical Mechanics and its Applications*, 369(2), 853–866. [https://doi.org/10.1016/j.physa.2005.12.063](https://doi.org/10.1016/j.physa.2005.12.063)
+- **Sevtsuk, A., & Mekonnen, M. (2012).** Urban network analysis: A new toolbox for ArcGIS. *Revue Internationale de Géomatique*, 22(2), 287–305. [https://doi.org/10.3166/rig.22.287-305](https://doi.org/10.3166/rig.22.287-305)
+- **Siksna, A. (1997).** The effects of block size and form in North American and Australian city centres. *Urban Morphology*, 1(1), 19–33. [https://doi.org/10.51347/jum.v1i1.4048](https://doi.org/10.51347/jum.v1i1.4048)
