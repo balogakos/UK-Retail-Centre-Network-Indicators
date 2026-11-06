@@ -43,6 +43,7 @@ All scripts use repository-relative paths and compute the dataset from scratch:
 - [`Analysis Code/04_Generate_Indicator_Profiles.py`](Analysis%20Code/04_Generate_Indicator_Profiles.py): Produces the national overview figure [`uk_retail_centre_indicator_popouts.png`](Output%20Data/Figures/uk_retail_centre_indicator_popouts.png), the methodological construction figure [`visual_qa_sidewalk_consolidation.png`](Output%20Data/Figures/visual_qa_sidewalk_consolidation.png), the 11 distribution profile figures [`profile_01_*.png` to `profile_11_*.png`](Output%20Data/Figures/), and [`Indicator_Profile_Examples.csv`](Output%20Data/Indicator_Profile_Examples.csv).
 - [`Analysis Code/05_Create_Editorial_Figures.py`](Analysis%20Code/05_Create_Editorial_Figures.py): Exports high-resolution dark-mode publication figures for the GeoDS retail centre morphology data story.
 - [`Analysis Code/06_Export_Explorer_Data.py`](Analysis%20Code/06_Export_Explorer_Data.py): Compiles optimized, lightweight JSON structures for the interactive web map, radar charts, and comparative benchmarks.
+- [`Analysis Code/07_Fill_Data_in_Brief_Template.py`](Analysis%20Code/07_Fill_Data_in_Brief_Template.py): Automatically populates the Elsevier Data in Brief manuscript template with complete data specifications, value bullets, and methodology.
 
 ### 1.3 Interactive Web Map and Dual Comparator
 
