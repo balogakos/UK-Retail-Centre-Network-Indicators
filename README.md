@@ -1,7 +1,5 @@
 # UK-Retail-Centre-Network-Indicators
-### Akos Balog
 
-----
 
 This repository contains street-network morphology indicators, validation tables, and Python scripts for the 9,623 UK retail centres delineated by the [Geographic Data Service (GeoDS)](https://geods.ac.uk).
 
