@@ -1,0 +1,803 @@
+{
+  "indicators": [
+    {
+      "id": "walk_reach_400",
+      "name": "Walkable Reach (400 m)",
+      "short": "Walk Reach",
+      "unit": "%",
+      "fmt": ".1%",
+      "higher_is": "better",
+      "desc": "Share of surrounding street network reachable within a 400 m walk from the centre perimeter."
+    },
+    {
+      "id": "drive_reach_400",
+      "name": "Road Embeddedness (400 m)",
+      "short": "Road Reach",
+      "unit": "%",
+      "fmt": ".1%",
+      "higher_is": "neutral",
+      "desc": "Share of surrounding driveable street network topologically connected within 400 m."
+    },
+    {
+      "id": "arterial_share",
+      "name": "Arterial Road Share",
+      "short": "Arterial",
+      "unit": "%",
+      "fmt": ".1%",
+      "higher_is": "lower",
+      "desc": "Share of local roads classified as high-speed trunk, primary, or secondary highways."
+    },
+    {
+      "id": "service_share",
+      "name": "Service & Parking Way Share",
+      "short": "Service Share",
+      "unit": "%",
+      "fmt": ".1%",
+      "higher_is": "lower",
+      "desc": "Share of motorised network classified as service ways, car-park aisles, and loading bays."
+    },
+    {
+      "id": "carfree_share",
+      "name": "Pedestrian-Way Share",
+      "short": "Pedestrian Share",
+      "unit": "%",
+      "fmt": ".1%",
+      "higher_is": "better",
+      "desc": "Share of walkable network dedicated to traffic-free footways, pedestrian streets, and paths."
+    },
+    {
+      "id": "walk_median_edge_len_m",
+      "name": "Median Link Length",
+      "short": "Street Grain",
+      "unit": "m",
+      "fmt": ".1f m",
+      "higher_is": "lower",
+      "desc": "Median distance between street-network junctions. Shorter links indicate finer urban grain."
+    },
+    {
+      "id": "walk_meshedness",
+      "name": "Street-Network Meshedness",
+      "short": "Meshedness",
+      "unit": "ratio",
+      "fmt": ".3f",
+      "higher_is": "better",
+      "desc": "Cyclic link density. Higher values indicate multiple alternative routes and looped circuits."
+    },
+    {
+      "id": "walk_sightline_continuity",
+      "name": "Sightline Continuity",
+      "short": "Sightlines",
+      "unit": "ratio",
+      "fmt": ".3f",
+      "higher_is": "neutral",
+      "desc": "Geometric straightness of street segments. Higher values indicate long linear vistas."
+    },
+    {
+      "id": "flow_concentration",
+      "name": "Flow Concentration (Betweenness)",
+      "short": "Flow Concentration",
+      "unit": "Gini",
+      "fmt": ".3f",
+      "higher_is": "neutral",
+      "desc": "Gini concentration of 400 m shortest-path walk flows onto a dominant high-street spine."
+    },
+    {
+      "id": "walk_block_median_area_m2",
+      "name": "Median Block Area",
+      "short": "Block Area",
+      "unit": "m\u00b2",
+      "fmt": ",.0f m\u00b2",
+      "higher_is": "lower",
+      "desc": "Median area of enclosed urban blocks. Smaller blocks support walkable, permeable town cores."
+    },
+    {
+      "id": "orientation_entropy",
+      "name": "Grid Orientation Entropy",
+      "short": "Grid Order",
+      "unit": "entropy",
+      "fmt": ".3f",
+      "higher_is": "neutral",
+      "desc": "Directional entropy of street bearings. Lower values indicate strict orthogonal grids."
+    }
+  ],
+  "national": {
+    "n": 9623,
+    "raw": {
+      "walk_reach_400": 0.6278,
+      "drive_reach_400": 0.6275,
+      "arterial_share": 0.2526,
+      "service_share": 0.2918,
+      "carfree_share": 0.144,
+      "walk_median_edge_len_m": 50.0669,
+      "walk_meshedness": 0.065,
+      "walk_sightline_continuity": 0.8966,
+      "flow_concentration": 0.4415,
+      "walk_block_median_area_m2": 6910.169,
+      "orientation_entropy": 0.9196
+    },
+    "pct": {
+      "walk_reach_400": 50.0,
+      "drive_reach_400": 50.0,
+      "arterial_share": 50.0,
+      "service_share": 50.0,
+      "carfree_share": 50.0,
+      "walk_median_edge_len_m": 50.0,
+      "walk_meshedness": 50.0,
+      "walk_sightline_continuity": 50.0,
+      "flow_concentration": 50.0,
+      "walk_block_median_area_m2": 50.0,
+      "orientation_entropy": 50.0
+    }
+  },
+  "hierarchy": {
+    "District Centre": {
+      "n": 332,
+      "raw": {
+        "walk_reach_400": 0.6899,
+        "drive_reach_400": 0.7141,
+        "arterial_share": 0.2534,
+        "service_share": 0.2665,
+        "carfree_share": 0.1518,
+        "walk_median_edge_len_m": 48.7544,
+        "walk_meshedness": 0.0866,
+        "walk_sightline_continuity": 0.9052,
+        "flow_concentration": 0.4689,
+        "walk_block_median_area_m2": 8332.6781,
+        "orientation_entropy": 0.9027
+      },
+      "pct": {
+        "walk_reach_400": 72.6,
+        "drive_reach_400": 77.1,
+        "arterial_share": 50.2,
+        "service_share": 44.3,
+        "carfree_share": 52.6,
+        "walk_median_edge_len_m": 47.0,
+        "walk_meshedness": 69.1,
+        "walk_sightline_continuity": 54.1,
+        "flow_concentration": 64.2,
+        "walk_block_median_area_m2": 62.3,
+        "orientation_entropy": 38.8
+      }
+    },
+    "Large Retail Park": {
+      "n": 308,
+      "raw": {
+        "walk_reach_400": 0.5779,
+        "drive_reach_400": 0.574,
+        "arterial_share": 0.3927,
+        "service_share": 0.5303,
+        "carfree_share": 0.1348,
+        "walk_median_edge_len_m": 43.5477,
+        "walk_meshedness": 0.0728,
+        "walk_sightline_continuity": 0.8624,
+        "flow_concentration": 0.5147,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      },
+      "pct": {
+        "walk_reach_400": 33.7,
+        "drive_reach_400": 34.2,
+        "arterial_share": 78.2,
+        "service_share": 89.5,
+        "carfree_share": 46.6,
+        "walk_median_edge_len_m": 34.1,
+        "walk_meshedness": 56.8,
+        "walk_sightline_continuity": 35.8,
+        "flow_concentration": 82.5,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      }
+    },
+    "Large Shopping Centre": {
+      "n": 44,
+      "raw": {
+        "walk_reach_400": 0.5356,
+        "drive_reach_400": 0.5118,
+        "arterial_share": 0.3308,
+        "service_share": 0.5667,
+        "carfree_share": 0.1957,
+        "walk_median_edge_len_m": 39.6468,
+        "walk_meshedness": 0.0807,
+        "walk_sightline_continuity": 0.8696,
+        "flow_concentration": 0.5453,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      },
+      "pct": {
+        "walk_reach_400": 22.9,
+        "drive_reach_400": 20.7,
+        "arterial_share": 67.9,
+        "service_share": 92.3,
+        "carfree_share": 66.5,
+        "walk_median_edge_len_m": 23.4,
+        "walk_meshedness": 64.1,
+        "walk_sightline_continuity": 38.7,
+        "flow_concentration": 90.2,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      }
+    },
+    "Local Centre": {
+      "n": 448,
+      "raw": {
+        "walk_reach_400": 0.6826,
+        "drive_reach_400": 0.6831,
+        "arterial_share": 0.2426,
+        "service_share": 0.2999,
+        "carfree_share": 0.1607,
+        "walk_median_edge_len_m": 47.6523,
+        "walk_meshedness": 0.0747,
+        "walk_sightline_continuity": 0.8972,
+        "flow_concentration": 0.452,
+        "walk_block_median_area_m2": 7538.0029,
+        "orientation_entropy": 0.8962
+      },
+      "pct": {
+        "walk_reach_400": 70.0,
+        "drive_reach_400": 67.6,
+        "arterial_share": 47.4,
+        "service_share": 52.0,
+        "carfree_share": 55.7,
+        "walk_median_edge_len_m": 44.4,
+        "walk_meshedness": 58.6,
+        "walk_sightline_continuity": 50.4,
+        "flow_concentration": 55.6,
+        "walk_block_median_area_m2": 56.9,
+        "orientation_entropy": 35.1
+      }
+    },
+    "Major Town Centre": {
+      "n": 144,
+      "raw": {
+        "walk_reach_400": 0.7036,
+        "drive_reach_400": 0.7205,
+        "arterial_share": 0.2963,
+        "service_share": 0.3259,
+        "carfree_share": 0.237,
+        "walk_median_edge_len_m": 38.8597,
+        "walk_meshedness": 0.1104,
+        "walk_sightline_continuity": 0.8779,
+        "flow_concentration": 0.4885,
+        "walk_block_median_area_m2": 6008.2368,
+        "orientation_entropy": 0.9476
+      },
+      "pct": {
+        "walk_reach_400": 77.6,
+        "drive_reach_400": 78.9,
+        "arterial_share": 60.5,
+        "service_share": 58.3,
+        "carfree_share": 76.7,
+        "walk_median_edge_len_m": 21.2,
+        "walk_meshedness": 84.6,
+        "walk_sightline_continuity": 42.3,
+        "flow_concentration": 72.9,
+        "walk_block_median_area_m2": 40.8,
+        "orientation_entropy": 74.6
+      }
+    },
+    "Market Town": {
+      "n": 219,
+      "raw": {
+        "walk_reach_400": 0.7322,
+        "drive_reach_400": 0.7104,
+        "arterial_share": 0.2455,
+        "service_share": 0.3811,
+        "carfree_share": 0.221,
+        "walk_median_edge_len_m": 42.4253,
+        "walk_meshedness": 0.0879,
+        "walk_sightline_continuity": 0.8548,
+        "flow_concentration": 0.4716,
+        "walk_block_median_area_m2": 5974.6048,
+        "orientation_entropy": 0.9387
+      },
+      "pct": {
+        "walk_reach_400": 85.7,
+        "drive_reach_400": 76.0,
+        "arterial_share": 48.1,
+        "service_share": 69.4,
+        "carfree_share": 72.9,
+        "walk_median_edge_len_m": 31.0,
+        "walk_meshedness": 70.2,
+        "walk_sightline_continuity": 32.4,
+        "flow_concentration": 65.4,
+        "walk_block_median_area_m2": 40.4,
+        "orientation_entropy": 65.1
+      }
+    },
+    "Regional Centre": {
+      "n": 104,
+      "raw": {
+        "walk_reach_400": 0.674,
+        "drive_reach_400": 0.6798,
+        "arterial_share": 0.2776,
+        "service_share": 0.2258,
+        "carfree_share": 0.3072,
+        "walk_median_edge_len_m": 37.7974,
+        "walk_meshedness": 0.1014,
+        "walk_sightline_continuity": 0.9039,
+        "flow_concentration": 0.4875,
+        "walk_block_median_area_m2": 5205.9249,
+        "orientation_entropy": 0.9187
+      },
+      "pct": {
+        "walk_reach_400": 66.9,
+        "drive_reach_400": 66.5,
+        "arterial_share": 56.3,
+        "service_share": 34.2,
+        "carfree_share": 88.6,
+        "walk_median_edge_len_m": 18.5,
+        "walk_meshedness": 79.7,
+        "walk_sightline_continuity": 53.7,
+        "flow_concentration": 72.5,
+        "walk_block_median_area_m2": 31.1,
+        "orientation_entropy": 48.9
+      }
+    },
+    "Small Local Centre": {
+      "n": 6883,
+      "raw": {
+        "walk_reach_400": 0.618,
+        "drive_reach_400": 0.6185,
+        "arterial_share": 0.2309,
+        "service_share": 0.2529,
+        "carfree_share": 0.1336,
+        "walk_median_edge_len_m": 53.28,
+        "walk_meshedness": 0.0584,
+        "walk_sightline_continuity": 0.9048,
+        "flow_concentration": 0.4242,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      },
+      "pct": {
+        "walk_reach_400": 46.6,
+        "drive_reach_400": 47.3,
+        "arterial_share": 44.4,
+        "service_share": 41.1,
+        "carfree_share": 46.1,
+        "walk_median_edge_len_m": 56.9,
+        "walk_meshedness": 43.6,
+        "walk_sightline_continuity": 53.9,
+        "flow_concentration": 40.6,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      }
+    },
+    "Small Retail Park": {
+      "n": 864,
+      "raw": {
+        "walk_reach_400": 0.557,
+        "drive_reach_400": 0.5643,
+        "arterial_share": 0.3919,
+        "service_share": 0.485,
+        "carfree_share": 0.1329,
+        "walk_median_edge_len_m": 45.4147,
+        "walk_meshedness": 0.0645,
+        "walk_sightline_continuity": 0.8718,
+        "flow_concentration": 0.4881,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      },
+      "pct": {
+        "walk_reach_400": 27.9,
+        "drive_reach_400": 31.9,
+        "arterial_share": 78.1,
+        "service_share": 85.0,
+        "carfree_share": 45.9,
+        "walk_median_edge_len_m": 39.2,
+        "walk_meshedness": 49.5,
+        "walk_sightline_continuity": 39.5,
+        "flow_concentration": 72.8,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      }
+    },
+    "Small Shopping Centre": {
+      "n": 3,
+      "raw": {
+        "walk_reach_400": 0.6648,
+        "drive_reach_400": 0.5132,
+        "arterial_share": 0.1073,
+        "service_share": 0.5478,
+        "carfree_share": 0.1747,
+        "walk_median_edge_len_m": 64.6937,
+        "walk_meshedness": 0.0,
+        "walk_sightline_continuity": 0.8132,
+        "flow_concentration": 0.5082,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      },
+      "pct": {
+        "walk_reach_400": 63.7,
+        "drive_reach_400": 20.9,
+        "arterial_share": 26.7,
+        "service_share": 91.0,
+        "carfree_share": 60.2,
+        "walk_median_edge_len_m": 76.1,
+        "walk_meshedness": 4.4,
+        "walk_sightline_continuity": 20.2,
+        "flow_concentration": 80.4,
+        "walk_block_median_area_m2": null,
+        "orientation_entropy": null
+      }
+    },
+    "Town Centre": {
+      "n": 274,
+      "raw": {
+        "walk_reach_400": 0.7055,
+        "drive_reach_400": 0.7051,
+        "arterial_share": 0.2828,
+        "service_share": 0.3813,
+        "carfree_share": 0.206,
+        "walk_median_edge_len_m": 41.6467,
+        "walk_meshedness": 0.0942,
+        "walk_sightline_continuity": 0.8737,
+        "flow_concentration": 0.4857,
+        "walk_block_median_area_m2": 6842.6452,
+        "orientation_entropy": 0.9313
+      },
+      "pct": {
+        "walk_reach_400": 78.2,
+        "drive_reach_400": 74.5,
+        "arterial_share": 57.4,
+        "service_share": 69.5,
+        "carfree_share": 69.3,
+        "walk_median_edge_len_m": 28.8,
+        "walk_meshedness": 74.8,
+        "walk_sightline_continuity": 39.8,
+        "flow_concentration": 71.6,
+        "walk_block_median_area_m2": 49.2,
+        "orientation_entropy": 59.7
+      }
+    }
+  },
+  "region": {
+    "East Midlands": {
+      "n": 622,
+      "raw": {
+        "walk_reach_400": 0.6336,
+        "drive_reach_400": 0.6245,
+        "arterial_share": 0.2456,
+        "service_share": 0.3032,
+        "carfree_share": 0.1623,
+        "walk_median_edge_len_m": 49.8941,
+        "walk_meshedness": 0.0711,
+        "walk_sightline_continuity": 0.8956,
+        "flow_concentration": 0.4376,
+        "walk_block_median_area_m2": 6386.4591,
+        "orientation_entropy": 0.9301
+      },
+      "pct": {
+        "walk_reach_400": 52.3,
+        "drive_reach_400": 49.1,
+        "arterial_share": 48.2,
+        "service_share": 52.9,
+        "carfree_share": 56.3,
+        "walk_median_edge_len_m": 49.7,
+        "walk_meshedness": 55.5,
+        "walk_sightline_continuity": 49.8,
+        "flow_concentration": 47.8,
+        "walk_block_median_area_m2": 44.9,
+        "orientation_entropy": 58.2
+      }
+    },
+    "East of England": {
+      "n": 861,
+      "raw": {
+        "walk_reach_400": 0.61,
+        "drive_reach_400": 0.6018,
+        "arterial_share": 0.2346,
+        "service_share": 0.3279,
+        "carfree_share": 0.1585,
+        "walk_median_edge_len_m": 49.9115,
+        "walk_meshedness": 0.0562,
+        "walk_sightline_continuity": 0.874,
+        "flow_concentration": 0.4456,
+        "walk_block_median_area_m2": 6783.9631,
+        "orientation_entropy": 0.9197
+      },
+      "pct": {
+        "walk_reach_400": 43.9,
+        "drive_reach_400": 41.8,
+        "arterial_share": 45.4,
+        "service_share": 58.6,
+        "carfree_share": 55.1,
+        "walk_median_edge_len_m": 49.7,
+        "walk_meshedness": 41.7,
+        "walk_sightline_continuity": 40.3,
+        "flow_concentration": 52.2,
+        "walk_block_median_area_m2": 48.7,
+        "orientation_entropy": 50.0
+      }
+    },
+    "London": {
+      "n": 1394,
+      "raw": {
+        "walk_reach_400": 0.6033,
+        "drive_reach_400": 0.6276,
+        "arterial_share": 0.2632,
+        "service_share": 0.2126,
+        "carfree_share": 0.1404,
+        "walk_median_edge_len_m": 53.7599,
+        "walk_meshedness": 0.0567,
+        "walk_sightline_continuity": 0.9143,
+        "flow_concentration": 0.4593,
+        "walk_block_median_area_m2": 9170.1198,
+        "orientation_entropy": 0.8947
+      },
+      "pct": {
+        "walk_reach_400": 41.7,
+        "drive_reach_400": 50.0,
+        "arterial_share": 52.5,
+        "service_share": 31.0,
+        "carfree_share": 48.7,
+        "walk_median_edge_len_m": 58.0,
+        "walk_meshedness": 42.3,
+        "walk_sightline_continuity": 58.4,
+        "flow_concentration": 58.9,
+        "walk_block_median_area_m2": 68.0,
+        "orientation_entropy": 34.2
+      }
+    },
+    "North East": {
+      "n": 403,
+      "raw": {
+        "walk_reach_400": 0.6507,
+        "drive_reach_400": 0.6277,
+        "arterial_share": 0.2025,
+        "service_share": 0.3263,
+        "carfree_share": 0.153,
+        "walk_median_edge_len_m": 49.1898,
+        "walk_meshedness": 0.0725,
+        "walk_sightline_continuity": 0.9057,
+        "flow_concentration": 0.4329,
+        "walk_block_median_area_m2": 5600.2627,
+        "orientation_entropy": 0.912
+      },
+      "pct": {
+        "walk_reach_400": 58.5,
+        "drive_reach_400": 50.1,
+        "arterial_share": 37.6,
+        "service_share": 58.4,
+        "carfree_share": 53.1,
+        "walk_median_edge_len_m": 48.0,
+        "walk_meshedness": 56.4,
+        "walk_sightline_continuity": 54.4,
+        "flow_concentration": 45.5,
+        "walk_block_median_area_m2": 36.1,
+        "orientation_entropy": 44.5
+      }
+    },
+    "North West": {
+      "n": 1206,
+      "raw": {
+        "walk_reach_400": 0.6428,
+        "drive_reach_400": 0.6449,
+        "arterial_share": 0.2372,
+        "service_share": 0.2828,
+        "carfree_share": 0.1104,
+        "walk_median_edge_len_m": 49.9308,
+        "walk_meshedness": 0.0698,
+        "walk_sightline_continuity": 0.9231,
+        "flow_concentration": 0.4344,
+        "walk_block_median_area_m2": 5220.6723,
+        "orientation_entropy": 0.9127
+      },
+      "pct": {
+        "walk_reach_400": 55.5,
+        "drive_reach_400": 55.4,
+        "arterial_share": 46.1,
+        "service_share": 48.0,
+        "carfree_share": 38.6,
+        "walk_median_edge_len_m": 49.7,
+        "walk_meshedness": 54.3,
+        "walk_sightline_continuity": 62.5,
+        "flow_concentration": 46.2,
+        "walk_block_median_area_m2": 31.3,
+        "orientation_entropy": 44.9
+      }
+    },
+    "Northern Ireland": {
+      "n": 237,
+      "raw": {
+        "walk_reach_400": 0.6488,
+        "drive_reach_400": 0.6533,
+        "arterial_share": 0.3433,
+        "service_share": 0.3612,
+        "carfree_share": 0.1211,
+        "walk_median_edge_len_m": 44.79,
+        "walk_meshedness": 0.0659,
+        "walk_sightline_continuity": 0.9,
+        "flow_concentration": 0.4528,
+        "walk_block_median_area_m2": 6989.0315,
+        "orientation_entropy": 0.929
+      },
+      "pct": {
+        "walk_reach_400": 57.8,
+        "drive_reach_400": 57.8,
+        "arterial_share": 70.2,
+        "service_share": 65.8,
+        "carfree_share": 41.9,
+        "walk_median_edge_len_m": 37.6,
+        "walk_meshedness": 50.9,
+        "walk_sightline_continuity": 51.8,
+        "flow_concentration": 56.1,
+        "walk_block_median_area_m2": 51.1,
+        "orientation_entropy": 57.3
+      }
+    },
+    "Scotland": {
+      "n": 811,
+      "raw": {
+        "walk_reach_400": 0.6534,
+        "drive_reach_400": 0.6278,
+        "arterial_share": 0.269,
+        "service_share": 0.2903,
+        "carfree_share": 0.1779,
+        "walk_median_edge_len_m": 47.5366,
+        "walk_meshedness": 0.0765,
+        "walk_sightline_continuity": 0.8889,
+        "flow_concentration": 0.4427,
+        "walk_block_median_area_m2": 6985.5174,
+        "orientation_entropy": 0.9091
+      },
+      "pct": {
+        "walk_reach_400": 59.6,
+        "drive_reach_400": 50.1,
+        "arterial_share": 54.2,
+        "service_share": 49.6,
+        "carfree_share": 61.1,
+        "walk_median_edge_len_m": 44.1,
+        "walk_meshedness": 60.1,
+        "walk_sightline_continuity": 46.8,
+        "flow_concentration": 50.5,
+        "walk_block_median_area_m2": 51.0,
+        "orientation_entropy": 42.8
+      }
+    },
+    "South East": {
+      "n": 1218,
+      "raw": {
+        "walk_reach_400": 0.6159,
+        "drive_reach_400": 0.6251,
+        "arterial_share": 0.2536,
+        "service_share": 0.3112,
+        "carfree_share": 0.1558,
+        "walk_median_edge_len_m": 51.7675,
+        "walk_meshedness": 0.0563,
+        "walk_sightline_continuity": 0.875,
+        "flow_concentration": 0.4429,
+        "walk_block_median_area_m2": 7439.4068,
+        "orientation_entropy": 0.9216
+      },
+      "pct": {
+        "walk_reach_400": 45.9,
+        "drive_reach_400": 49.2,
+        "arterial_share": 50.3,
+        "service_share": 55.0,
+        "carfree_share": 54.0,
+        "walk_median_edge_len_m": 53.6,
+        "walk_meshedness": 41.9,
+        "walk_sightline_continuity": 40.9,
+        "flow_concentration": 50.7,
+        "walk_block_median_area_m2": 56.1,
+        "orientation_entropy": 51.5
+      }
+    },
+    "South West": {
+      "n": 748,
+      "raw": {
+        "walk_reach_400": 0.6363,
+        "drive_reach_400": 0.6274,
+        "arterial_share": 0.2407,
+        "service_share": 0.327,
+        "carfree_share": 0.1587,
+        "walk_median_edge_len_m": 48.7484,
+        "walk_meshedness": 0.0667,
+        "walk_sightline_continuity": 0.8587,
+        "flow_concentration": 0.4406,
+        "walk_block_median_area_m2": 5860.6513,
+        "orientation_entropy": 0.9353
+      },
+      "pct": {
+        "walk_reach_400": 53.2,
+        "drive_reach_400": 50.0,
+        "arterial_share": 47.0,
+        "service_share": 58.5,
+        "carfree_share": 55.1,
+        "walk_median_edge_len_m": 47.0,
+        "walk_meshedness": 51.6,
+        "walk_sightline_continuity": 35.0,
+        "flow_concentration": 49.5,
+        "walk_block_median_area_m2": 39.1,
+        "orientation_entropy": 62.5
+      }
+    },
+    "Wales": {
+      "n": 459,
+      "raw": {
+        "walk_reach_400": 0.6267,
+        "drive_reach_400": 0.6182,
+        "arterial_share": 0.2684,
+        "service_share": 0.3336,
+        "carfree_share": 0.1123,
+        "walk_median_edge_len_m": 52.1357,
+        "walk_meshedness": 0.065,
+        "walk_sightline_continuity": 0.875,
+        "flow_concentration": 0.4453,
+        "walk_block_median_area_m2": 7073.9074,
+        "orientation_entropy": 0.9221
+      },
+      "pct": {
+        "walk_reach_400": 49.6,
+        "drive_reach_400": 47.3,
+        "arterial_share": 54.0,
+        "service_share": 59.9,
+        "carfree_share": 39.1,
+        "walk_median_edge_len_m": 54.6,
+        "walk_meshedness": 49.9,
+        "walk_sightline_continuity": 40.9,
+        "flow_concentration": 52.0,
+        "walk_block_median_area_m2": 52.2,
+        "orientation_entropy": 51.9
+      }
+    },
+    "West Midlands": {
+      "n": 811,
+      "raw": {
+        "walk_reach_400": 0.6055,
+        "drive_reach_400": 0.6211,
+        "arterial_share": 0.2795,
+        "service_share": 0.2915,
+        "carfree_share": 0.1355,
+        "walk_median_edge_len_m": 50.866,
+        "walk_meshedness": 0.0685,
+        "walk_sightline_continuity": 0.8972,
+        "flow_concentration": 0.4282,
+        "walk_block_median_area_m2": 7487.6913,
+        "orientation_entropy": 0.9306
+      },
+      "pct": {
+        "walk_reach_400": 42.3,
+        "drive_reach_400": 48.1,
+        "arterial_share": 56.8,
+        "service_share": 49.9,
+        "carfree_share": 46.9,
+        "walk_median_edge_len_m": 51.9,
+        "walk_meshedness": 53.2,
+        "walk_sightline_continuity": 50.4,
+        "flow_concentration": 42.9,
+        "walk_block_median_area_m2": 56.6,
+        "orientation_entropy": 58.7
+      }
+    },
+    "Yorkshire and The Humber": {
+      "n": 853,
+      "raw": {
+        "walk_reach_400": 0.6533,
+        "drive_reach_400": 0.644,
+        "arterial_share": 0.2389,
+        "service_share": 0.2773,
+        "carfree_share": 0.1388,
+        "walk_median_edge_len_m": 48.5469,
+        "walk_meshedness": 0.0727,
+        "walk_sightline_continuity": 0.9048,
+        "flow_concentration": 0.4353,
+        "walk_block_median_area_m2": 5130.5886,
+        "orientation_entropy": 0.9364
+      },
+      "pct": {
+        "walk_reach_400": 59.6,
+        "drive_reach_400": 55.1,
+        "arterial_share": 46.6,
+        "service_share": 46.9,
+        "carfree_share": 48.0,
+        "walk_median_edge_len_m": 46.5,
+        "walk_meshedness": 56.7,
+        "walk_sightline_continuity": 53.9,
+        "flow_concentration": 46.7,
+        "walk_block_median_area_m2": 29.8,
+        "orientation_entropy": 63.3
+      }
+    }
+  }
+}

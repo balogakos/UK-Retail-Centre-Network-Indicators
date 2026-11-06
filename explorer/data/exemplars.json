@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Neighbourhood Walk-in Reach vs. Island Retail Park",
+    "desc": "Bradford's permeable street network reaches 78% of surrounding neighbourhood streets on foot, compared with 46% for Peel Retail Park's highway-severed boundary.",
+    "centre_a_idx": 53,
+    "centre_b_idx": 6017
+  },
+  {
+    "title": "Historic Fine Grain & Tight Blocks vs. Linear Corridor",
+    "desc": "Bristol Old City features tightly spaced 32 m street links and 5,079 m\u00b2 blocks, whereas Leytonstone stretches across widely spaced 41 m links and 16,000 m\u00b2 blocks.",
+    "centre_a_idx": 138,
+    "centre_b_idx": 728
+  },
+  {
+    "title": "Car-Park Circulation Loops vs. Active High-Street Frontage",
+    "desc": "Rushden Lakes devotes 64% of its internal road network to service and parking loops, while Southend London Road prioritises public street frontages (18% service).",
+    "centre_a_idx": 1861,
+    "centre_b_idx": 2178
+  },
+  {
+    "title": "Pedestrian Precinct Priority vs. Regional Shopping Complex",
+    "desc": "Thetford town centre dedicates 34% of its walkable network to traffic-free pedestrian zones, compared with Meadowhall's ring-road bounded regional complex.",
+    "centre_a_idx": 1118,
+    "centre_b_idx": 266
+  },
+  {
+    "title": "Continuous Looped Circuits vs. Dominant Single Spine",
+    "desc": "Morley Queen Street boasts high network meshedness (0.141) allowing continuous shopping loops, while Edinburgh St James funnels pedestrian flow heavily onto a primary corridor.",
+    "centre_a_idx": 447,
+    "centre_b_idx": 145
+  }
+]

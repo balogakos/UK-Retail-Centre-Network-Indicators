@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UK Retail Centre Network Explorer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --card-hover: #1f242c;
+      --border: #30363d;
+      --border-subtle: #21262d;
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --cyan: #38bdf8;
+      --orange: #fb923c;
+      --teal: #2dd4bf;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --gold: #fbbf24;
+      --purple: #c084fc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #0284c7, #2dd4bf);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-grow: 1;
+      max-width: 720px;
+      justify-content: flex-end;
+    }
+
+    .search-container {
+      position: relative;
+      width: 320px;
+    }
+    .search-input {
+      width: 100%;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px 7px 32px;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .search-input:focus {
+      border-color: var(--cyan);
+    }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+    }
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      max-height: 380px;
+      overflow-y: auto;
+      z-index: 2000;
+      display: none;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .search-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .search-item:last-child { border-bottom: none; }
+    .search-item:hover, .search-item.active {
+      background-color: var(--card-hover);
+    }
+    .search-item-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .search-item-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover {
+      background-color: var(--card-hover);
+      border-color: var(--text-muted);
+    }
+    .btn.active {
+      background-color: rgba(56, 189, 248, 0.12);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .main-layout {
+      display: flex;
+      flex-grow: 1;
+      height: calc(100vh - 54px);
+      position: relative;
+    }
+
+    #map-container {
+      flex: 1 1 55%;
+      height: 100%;
+      position: relative;
+      background-color: #0b0e14;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-overlay-controls {
+      position: absolute;
+      top: 14px;
+      left: 60px;
+      z-index: 999;
+      background-color: rgba(22, 27, 34, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .map-overlay-controls label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .map-overlay-controls select {
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+      border-radius: 4px;
+      padding: 4px 8px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 24px;
+      left: 14px;
+      z-index: 999;
+      background-color: rgba(22, 27, 34, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .legend-ramp {
+      width: 110px;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #f43f5e, #fbbf24, #22d3ee);
+    }
+
+    .sidebar {
+      flex: 1 1 45%;
+      max-width: 620px;
+      min-width: 440px;
+      height: 100%;
+      background-color: var(--bg);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background-color: var(--card);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .centre-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background-color: var(--border-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .badge-primary {
+      background-color: rgba(56, 189, 248, 0.15);
+      color: var(--cyan);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    .badge-orange {
+      background-color: rgba(251, 146, 60, 0.15);
+      color: var(--orange);
+      border-color: rgba(251, 146, 60, 0.35);
+    }
+    .centre-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .centre-location {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background-color: var(--card);
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      color: var(--cyan);
+      border-bottom-color: var(--cyan);
+      background-color: rgba(56, 189, 248, 0.05);
+    }
+
+    .sidebar-scroll {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .chart-card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .chart-toggles {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .toggle-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background-color: var(--bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .toggle-chip.active {
+      background-color: var(--card-hover);
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dot-cyan { background-color: var(--cyan); }
+    .dot-orange { background-color: var(--orange); }
+    .dot-gray { background-color: #8b949e; }
+    .dot-purple { background-color: #c084fc; }
+
+    #radar-svg-container {
+      width: 100%;
+      max-width: 440px;
+      height: 330px;
+      position: relative;
+    }
+
+    .radar-tooltip {
+      position: absolute;
+      background-color: rgba(13, 17, 23, 0.94);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 11px;
+      font-size: 11px;
+      color: var(--text);
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      max-width: 240px;
+      line-height: 1.35;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 500px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+
+    .metric-card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .metric-card:hover {
+      border-color: var(--cyan);
+      background-color: var(--card-hover);
+    }
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .metric-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .metric-pct {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background-color: rgba(56, 189, 248, 0.12);
+      color: var(--cyan);
+    }
+    .metric-value {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .metric-bar-bg {
+      width: 100%;
+      height: 4px;
+      background-color: var(--border-subtle);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(to right, #0284c7, var(--cyan));
+    }
+    .metric-benchmarks {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .comparator-header {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .comparator-slots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .comp-slot {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      background-color: var(--bg);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      position: relative;
+    }
+    .comp-slot.slot-a { border-color: var(--cyan); }
+    .comp-slot.slot-b { border-color: var(--orange); }
+    .slot-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .slot-label-a { color: var(--cyan); }
+    .slot-label-b { color: var(--orange); }
+    .slot-name {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .slot-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .exemplar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .exemplar-item {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .exemplar-item:hover {
+      border-color: var(--text-muted);
+      background-color: var(--card-hover);
+    }
+    .exemplar-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .exemplar-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .comp-table th, .comp-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .comp-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 600;
+      background-color: var(--card);
+    }
+    .comp-table td:nth-child(2) { color: var(--cyan); font-weight: 600; }
+    .comp-table td:nth-child(3) { color: var(--orange); font-weight: 600; }
+    .diff-badge {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .diff-pos { background-color: rgba(56, 189, 248, 0.15); color: var(--cyan); }
+    .diff-neg { background-color: rgba(251, 146, 60, 0.15); color: var(--orange); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span class="brand-badge">GeoDS</span>
+      <span class="brand-title">Retail Centre Network Explorer</span>
+      <span class="brand-sub">9,623 UK Centres</span>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-container">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+        </svg>
+        <input type="text" id="search-box" class="search-input" placeholder="Search centre (e.g. Bradford, Morley, Rushden)..." autocomplete="off" />
+        <div id="search-dropdown" class="search-dropdown"></div>
+      </div>
+
+      <button id="compare-mode-btn" class="btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+        </svg>
+        Dual Comparator
+      </button>
+
+      <button id="reset-view-btn" class="btn" title="Reset UK Map Extent">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
+        </svg>
+        UK Overview
+      </button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <div id="map-container">
+      <div class="map-overlay-controls">
+        <label for="color-by-select">Color By:</label>
+        <select id="color-by-select">
+          <option value="walk_reach_400">Walk Reach (400 m)</option>
+          <option value="drive_reach_400">Road Embeddedness</option>
+          <option value="arterial_share">Arterial Road Share</option>
+          <option value="service_share">Service Way Share</option>
+          <option value="carfree_share">Pedestrian-Way Share</option>
+          <option value="walk_median_edge_len_m">Street Grain (Link Length)</option>
+          <option value="walk_meshedness">Street Meshedness</option>
+          <option value="flow_concentration">Flow Concentration (Spine)</option>
+          <option value="Classification">Retail Classification</option>
+        </select>
+
+        <label for="filter-class-select" style="margin-left: 6px;">Filter:</label>
+        <select id="filter-class-select">
+          <option value="ALL">All Classifications</option>
+          <option value="Regional Centre">Regional Centres</option>
+          <option value="Major Town Centre">Major Town Centres</option>
+          <option value="Town Centre">Town Centres</option>
+          <option value="Market Town">Market Towns</option>
+          <option value="District Centre">District Centres</option>
+          <option value="Local Centre">Local Centres</option>
+          <option value="Small Local Centre">Small Local Centres</option>
+          <option value="Large Retail Park">Retail Parks</option>
+          <option value="Large Shopping Centre">Shopping Centres</option>
+        </select>
+      </div>
+
+      <div class="map-legend">
+        <span id="legend-label-low">Low (0%)</span>
+        <div class="legend-ramp"></div>
+        <span id="legend-label-high">High (100%)</span>
+      </div>
+
+      <div id="map"></div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="centre-badges">
+          <span id="centre-cls-badge" class="badge badge-primary">Major Town Centre</span>
+          <span id="centre-reg-badge" class="badge">Yorkshire and The Humber</span>
+          <span id="centre-area-badge" class="badge">0.94 km²</span>
+        </div>
+        <div id="centre-title" class="centre-title">Bradford; Bradford</div>
+        <div id="centre-subtitle" class="centre-location">City of Bradford · ID: RC_0001</div>
+      </div>
+
+      <div class="sidebar-tabs">
+        <button id="tab-profile-btn" class="tab-btn active">Morphology Profile</button>
+        <button id="tab-compare-btn" class="tab-btn">Side-by-Side Comparator</button>
+      </div>
+
+      <div id="tab-profile-content" class="sidebar-scroll">
+        <div class="chart-card">
+          <div class="chart-toggles">
+            <span class="toggle-chip active" id="toggle-centre-a">
+              <span class="dot dot-cyan"></span>
+              <span id="chip-name-a">Selected Centre</span>
+            </span>
+            <span class="toggle-chip active" id="toggle-hier">
+              <span class="dot dot-gray"></span>
+              <span id="chip-name-hier">Tier Median</span>
+            </span>
+            <span class="toggle-chip" id="toggle-reg">
+              <span class="dot dot-purple"></span>
+              <span id="chip-name-reg">Regional Median</span>
+            </span>
+          </div>
+
+          <div id="radar-svg-container"></div>
+          <div id="radar-tooltip" class="radar-tooltip"></div>
+        </div>
+
+        <div class="metrics-grid" id="metrics-grid"></div>
+      </div>
+
+      <div id="tab-compare-content" class="sidebar-scroll" style="display: none;">
+        <div class="comparator-header">
+          <div style="font-size: 12px; font-weight: 700;">Active Comparison Pair</div>
+          <div class="comparator-slots">
+            <div class="comp-slot slot-a">
+              <div class="slot-label slot-label-a">Centre A (Primary)</div>
+              <div class="slot-name" id="slot-name-a">Bradford</div>
+              <div class="slot-sub" id="slot-sub-a">Major Town Centre</div>
+            </div>
+            <div class="comp-slot slot-b">
+              <div class="slot-label slot-label-b">Centre B (Comparator)</div>
+              <div class="slot-name" id="slot-name-b">Peel Retail Park</div>
+              <div class="slot-sub" id="slot-sub-b">Large Retail Park</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-toggles">
+            <span class="toggle-chip active">
+              <span class="dot dot-cyan"></span>
+              <span id="comp-radar-name-a">Centre A</span>
+            </span>
+            <span class="toggle-chip active">
+              <span class="dot dot-orange"></span>
+              <span id="comp-radar-name-b">Centre B</span>
+            </span>
+          </div>
+          <div id="comp-radar-svg-container" style="width: 100%; max-width: 440px; height: 320px;"></div>
+        </div>
+
+        <div style="background-color: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+          <div style="font-size: 12px; font-weight: 700; margin-bottom: 10px;">Indicator Comparison Table</div>
+          <table class="comp-table" id="comp-table">
+            <thead>
+              <tr>
+                <th>Indicator</th>
+                <th id="th-centre-a">Centre A</th>
+                <th id="th-centre-b">Centre B</th>
+                <th>Percentile Contrast</th>
+              </tr>
+            </thead>
+            <tbody id="comp-table-body"></tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 12px; font-weight: 700;">Curated High-Contrast Exemplars</div>
+          <div class="exemplar-list" id="exemplar-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // State management
+    const state = {
+      centres: [],
+      benchmarks: null,
+      boundaries: {},
+      exemplars: [],
+      centreA: null,
+      centreB: null,
+      activeMetric: 'walk_reach_400',
+      filterClass: 'ALL',
+      showHierarchyBench: true,
+      showRegionBench: false,
+      map: null,
+      pointsLayer: null,
+      boundaryLayers: { a: null, b: null },
+      activeTab: 'profile',
+      colorScale: {
+        walk_reach_400: { min: 0.1, max: 0.85, invert: false },
+        drive_reach_400: { min: 0.1, max: 0.85, invert: false },
+        arterial_share: { min: 0.05, max: 0.60, invert: true },
+        service_share: { min: 0.05, max: 0.65, invert: true },
+        carfree_share: { min: 0.02, max: 0.40, invert: false },
+        walk_median_edge_len_m: { min: 25, max: 80, invert: true },
+        walk_meshedness: { min: 0.02, max: 0.15, invert: false },
+        flow_concentration: { min: 0.30, max: 0.60, invert: false },
+      }
+    };
+
+    const CLASS_COLORS = {
+      'Regional Centre': '#38bdf8',
+      'Major Town Centre': '#0ea5e9',
+      'Town Centre': '#2dd4bf',
+      'Market Town': '#10b981',
+      'District Centre': '#a78bfa',
+      'Local Centre': '#c084fc',
+      'Small Local Centre': '#64748b',
+      'Large Retail Park': '#fb923c',
+      'Small Retail Park': '#f97316',
+      'Large Shopping Centre': '#fbbf24',
+      'Small Shopping Centre': '#f59e0b',
+    };
+
+    async function init() {
+      initMap();
+      setupEventListeners();
+      await loadData();
+      renderUI();
+    }
+
+    function initMap() {
+      state.map = L.map('map', {
+        center: [54.5, -2.5],
+        zoom: 6,
+        minZoom: 5,
+        maxZoom: 18,
+        zoomControl: false
+      });
+
+      L.control.zoom({ position: 'topleft' }).addTo(state.map);
+
+      // CartoDB Dark Matter base tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(state.map);
+    }
+
+    async function loadData() {
+      try {
+        const [benchRes, centresRes, exemplarsRes] = await Promise.all([
+          fetch('data/benchmarks.json'),
+          fetch('data/centres.json'),
+          fetch('data/exemplars.json'),
+        ]);
+
+        state.benchmarks = await benchRes.json();
+        state.centres = await centresRes.json();
+        state.exemplars = await exemplarsRes.json();
+
+        // Default initial centre A (Bradford) and B (Peel Retail Park)
+        const bradford = state.centres.find(c => c.name.includes('Bradford; Bradford')) || state.centres[0];
+        const peel = state.centres.find(c => c.name.includes('Peel Retail Park')) || state.centres[1];
+        state.centreA = bradford;
+        state.centreB = peel;
+
+        // Lazy load boundaries in background
+        fetch('data/boundaries.json').then(r => r.json()).then(data => {
+          state.boundaries = data;
+          updateBoundaries();
+        }).catch(err => console.warn('Boundaries deferred load', err));
+
+      } catch (err) {
+        console.error('Failed to load explorer data:', err);
+      }
+    }
+
+    function renderUI() {
+      renderMapPoints();
+      updateSelectedCentres();
+      populateExemplars();
+    }
+
+    function getMetricIndex(metricId) {
+      return state.benchmarks.indicators.findIndex(i => i.id === metricId);
+    }
+
+    function getColorForCentre(centre) {
+      if (state.activeMetric === 'Classification') {
+        return CLASS_COLORS[centre.cls] || '#64748b';
+      }
+
+      const mIdx = getMetricIndex(state.activeMetric);
+      const val = centre.m[mIdx];
+      if (val === null || val === undefined) return '#475569';
+
+      const cfg = state.colorScale[state.activeMetric] || { min: 0, max: 1, invert: false };
+      let norm = (val - cfg.min) / (cfg.max - cfg.min);
+      norm = Math.max(0, Math.min(1, norm));
+      if (cfg.invert) norm = 1 - norm;
+
+      // Color ramp from Rose (0.0) -> Gold (0.5) -> Cyan (1.0)
+      if (norm < 0.5) {
+        return interpolateColor('#f43f5e', '#fbbf24', norm * 2);
+      } else {
+        return interpolateColor('#fbbf24', '#22d3ee', (norm - 0.5) * 2);
+      }
+    }
+
+    function interpolateColor(c1, c2, factor) {
+      const hex = (c) => parseInt(c.slice(1), 16);
+      const r1 = (hex(c1) >> 16) & 255, g1 = (hex(c1) >> 8) & 255, b1 = hex(c1) & 255;
+      const r2 = (hex(c2) >> 16) & 255, g2 = (hex(c2) >> 8) & 255, b2 = hex(c2) & 255;
+      const r = Math.round(r1 + factor * (r2 - r1));
+      const g = Math.round(g1 + factor * (g2 - g1));
+      const b = Math.round(b1 + factor * (b2 - b1));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function renderMapPoints() {
+      if (state.pointsLayer) {
+        state.map.removeLayer(state.pointsLayer);
+      }
+
+      const canvasRenderer = L.canvas({ padding: 0.5 });
+      const markers = [];
+
+      const filtered = state.filterClass === 'ALL'
+        ? state.centres
+        : state.centres.filter(c => c.cls === state.filterClass);
+
+      for (let i = 0; i < filtered.length; i++) {
+        const c = filtered[i];
+        const color = getColorForCentre(c);
+        const radius = c.cls.includes('Regional') ? 6.5 : (c.cls.includes('Major') ? 5.5 : 3.5);
+
+        const marker = L.circleMarker([c.y, c.x], {
+          renderer: canvasRenderer,
+          radius: radius,
+          fillColor: color,
+          fillOpacity: 0.82,
+          color: '#ffffff',
+          weight: 0.4,
+        });
+
+        marker.on('click', () => {
+          if (state.activeTab === 'compare') {
+            state.centreB = c;
+          } else {
+            state.centreA = c;
+          }
+          updateSelectedCentres();
+          state.map.flyTo([c.y, c.x], Math.max(state.map.getZoom(), 14), { duration: 0.8 });
+        });
+
+        marker.bindTooltip(`<strong>${c.name}</strong><br/><span style="color:#8b949e">${c.cls} · ${c.reg}</span>`, {
+          direction: 'top',
+          offset: [0, -6],
+          opacity: 0.95,
+          className: 'map-tooltip'
+        });
+
+        markers.push(marker);
+      }
+
+      state.pointsLayer = L.featureGroup(markers).addTo(state.map);
+    }
+
+    function updateBoundaries() {
+      if (!state.boundaries) return;
+
+      // Centre A boundary
+      if (state.boundaryLayers.a) state.map.removeLayer(state.boundaryLayers.a);
+      if (state.centreA && state.boundaries[state.centreA.i]) {
+        const coords = state.boundaries[state.centreA.i];
+        const latlngs = coords.map(ring => ring.map(pt => [pt[1], pt[0]]));
+        state.boundaryLayers.a = L.polygon(latlngs, {
+          color: '#38bdf8',
+          weight: 2,
+          fillColor: '#38bdf8',
+          fillOpacity: 0.25,
+          interactive: false
+        }).addTo(state.map);
+      }
+
+      // Centre B boundary (if in compare mode)
+      if (state.boundaryLayers.b) state.map.removeLayer(state.boundaryLayers.b);
+      if (state.activeTab === 'compare' && state.centreB && state.boundaries[state.centreB.i]) {
+        const coords = state.boundaries[state.centreB.i];
+        const latlngs = coords.map(ring => ring.map(pt => [pt[1], pt[0]]));
+        state.boundaryLayers.b = L.polygon(latlngs, {
+          color: '#fb923c',
+          weight: 2,
+          fillColor: '#fb923c',
+          fillOpacity: 0.25,
+          interactive: false
+        }).addTo(state.map);
+      }
+    }
+
+    function updateSelectedCentres() {
+      const ca = state.centreA;
+      if (!ca) return;
+
+      // Update sidebar header
+      document.getElementById('centre-title').innerText = ca.name;
+      document.getElementById('centre-subtitle').innerText = `${ca.reg} · ID: ${ca.rc_id}`;
+      document.getElementById('centre-cls-badge').innerText = ca.cls;
+      document.getElementById('centre-reg-badge').innerText = ca.reg;
+      document.getElementById('centre-area-badge').innerText = ca.area_km2 ? `${ca.area_km2} km²` : 'N/A';
+
+      // Update toggle chips
+      document.getElementById('chip-name-a').innerText = ca.name.split(';')[0];
+      document.getElementById('chip-name-hier').innerText = `${ca.cls} Median`;
+      document.getElementById('chip-name-reg').innerText = `${ca.reg} Median`;
+
+      // Update Radar & Metrics
+      renderRadarChart('radar-svg-container', [
+        { name: ca.name, pcts: ca.p, color: 'var(--cyan)', active: true, width: 2.2, fill: 'rgba(56, 189, 248, 0.25)' },
+        { name: `${ca.cls} Median`, pcts: getBenchmarkPcts('hierarchy', ca.cls), color: '#8b949e', active: state.showHierarchyBench, width: 1.5, dash: '4,4' },
+        { name: `${ca.reg} Median`, pcts: getBenchmarkPcts('region', ca.reg), color: '#c084fc', active: state.showRegionBench, width: 1.5, dash: '2,3' },
+      ]);
+
+      renderMetricsGrid(ca);
+      updateBoundaries();
+
+      // If comparator active, update compare tab
+      if (state.centreB) {
+        updateComparatorUI();
+      }
+    }
+
+    function getBenchmarkPcts(type, key) {
+      if (!state.benchmarks || !state.benchmarks[type] || !state.benchmarks[type][key]) return [];
+      const bObj = state.benchmarks[type][key].pct;
+      return state.benchmarks.indicators.map(ind => bObj[ind.id] || 50.0);
+    }
+
+    function formatMetricValue(ind, val) {
+      if (val === null || val === undefined) return 'N/A';
+      if (ind.unit === '%') return `${(val * 100).toFixed(1)}%`;
+      if (ind.unit === 'm') return `${val.toFixed(1)} m`;
+      if (ind.unit === 'm²') return `${Math.round(val).toLocaleString()} m²`;
+      if (ind.unit === 'Gini' || ind.unit === 'ratio' || ind.unit === 'entropy') return val.toFixed(3);
+      return val.toString();
+    }
+
+    function renderMetricsGrid(centre) {
+      const grid = document.getElementById('metrics-grid');
+      grid.innerHTML = '';
+
+      state.benchmarks.indicators.forEach((ind, idx) => {
+        const val = centre.m[idx];
+        const pct = centre.p[idx];
+        const card = document.createElement('div');
+        card.className = 'metric-card';
+
+        const fmtVal = formatMetricValue(ind, val);
+        const pctText = pct !== null ? `${Math.round(pct)}%ile` : 'N/A';
+        const barWidth = pct !== null ? `${Math.min(100, Math.max(0, pct))}%` : '0%';
+
+        card.innerHTML = `
+          <div class="metric-header">
+            <span class="metric-name">${ind.short}</span>
+            <span class="metric-pct">${pctText}</span>
+          </div>
+          <div class="metric-value">${fmtVal}</div>
+          <div class="metric-bar-bg">
+            <div class="metric-bar-fill" style="width: ${barWidth}"></div>
+          </div>
+          <div class="metric-benchmarks">${ind.name}</div>
+        `;
+
+        card.addEventListener('click', () => {
+          document.getElementById('color-by-select').value = ind.id;
+          state.activeMetric = ind.id;
+          renderMapPoints();
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    function renderRadarChart(containerId, seriesList) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const width = container.clientWidth || 380;
+      const height = container.clientHeight || 320;
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = Math.min(width, height) / 2 - 38;
+
+      const indicators = state.benchmarks.indicators;
+      const totalAxes = indicators.length;
+      const angleStep = (Math.PI * 2) / totalAxes;
+
+      let svg = `<svg width="${width}" height="${height}" style="overflow: visible;">`;
+
+      // Concentric rings (25%, 50%, 75%, 100%)
+      const rings = [0.25, 0.5, 0.75, 1.0];
+      rings.forEach(rFrac => {
+        const r = radius * rFrac;
+        let path = '';
+        for (let i = 0; i <= totalAxes; i++) {
+          const angle = i * angleStep - Math.PI / 2;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          path += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+        }
+        svg += `<path d="${path}" fill="none" stroke="${rFrac === 0.5 ? '#30363d' : '#21262d'}" stroke-width="${rFrac === 0.5 ? 1.4 : 0.8}" />`;
+      });
+
+      // Axis lines & labels
+      indicators.forEach((ind, i) => {
+        const angle = i * angleStep - Math.PI / 2;
+        const x2 = cx + radius * Math.cos(angle);
+        const y2 = cy + radius * Math.sin(angle);
+        svg += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#21262d" stroke-width="0.9" />`;
+
+        // Outer label position
+        const labelR = radius + 18;
+        const lx = cx + labelR * Math.cos(angle);
+        const ly = cy + labelR * Math.sin(angle);
+        const anchor = Math.abs(Math.cos(angle)) < 0.25 ? 'middle' : (Math.cos(angle) > 0 ? 'start' : 'end');
+        svg += `<text x="${lx}" y="${ly + 4}" fill="#8b949e" font-size="9" font-weight="600" text-anchor="${anchor}">${ind.short}</text>`;
+      });
+
+      // Draw series polygons
+      seriesList.forEach(series => {
+        if (!series.active || !series.pcts || series.pcts.length === 0) return;
+
+        let path = '';
+        let points = [];
+        for (let i = 0; i < totalAxes; i++) {
+          const angle = i * angleStep - Math.PI / 2;
+          const pct = series.pcts[i] !== null && series.pcts[i] !== undefined ? series.pcts[i] : 50.0;
+          const r = radius * (pct / 100.0);
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          points.push({ x, y, pct, ind: indicators[i] });
+          path += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+        }
+        path += ' Z';
+
+        if (series.fill) {
+          svg += `<path d="${path}" fill="${series.fill}" stroke="none" />`;
+        }
+        svg += `<path d="${path}" fill="none" stroke="${series.color}" stroke-width="${series.width || 2}" stroke-dasharray="${series.dash || ''}" />`;
+
+        // Data point circles
+        points.forEach(pt => {
+          svg += `<circle cx="${pt.x}" cy="${pt.y}" r="3" fill="${series.color}" stroke="#0d1117" stroke-width="1" />`;
+        });
+      });
+
+      svg += '</svg>';
+      container.innerHTML = svg;
+    }
+
+    function updateComparatorUI() {
+      const ca = state.centreA;
+      const cb = state.centreB;
+      if (!ca || !cb) return;
+
+      document.getElementById('slot-name-a').innerText = ca.name.split(';')[0];
+      document.getElementById('slot-sub-a').innerText = `${ca.cls} · ${ca.reg}`;
+      document.getElementById('slot-name-b').innerText = cb.name.split(';')[0];
+      document.getElementById('slot-sub-b').innerText = `${cb.cls} · ${cb.reg}`;
+
+      document.getElementById('comp-radar-name-a').innerText = ca.name.split(';')[0];
+      document.getElementById('comp-radar-name-b').innerText = cb.name.split(';')[0];
+
+      document.getElementById('th-centre-a').innerText = ca.name.split(';')[0];
+      document.getElementById('th-centre-b').innerText = cb.name.split(';')[0];
+
+      // Render dual comparison radar chart
+      renderRadarChart('comp-radar-svg-container', [
+        { name: ca.name, pcts: ca.p, color: 'var(--cyan)', active: true, width: 2.2, fill: 'rgba(56, 189, 248, 0.20)' },
+        { name: cb.name, pcts: cb.p, color: 'var(--orange)', active: true, width: 2.2, fill: 'rgba(251, 146, 60, 0.20)' },
+      ]);
+
+      // Populate comparison table
+      const tbody = document.getElementById('comp-table-body');
+      tbody.innerHTML = '';
+
+      state.benchmarks.indicators.forEach((ind, i) => {
+        const valA = ca.m[i];
+        const valB = cb.m[i];
+        const pctA = ca.p[i];
+        const pctB = cb.p[i];
+
+        const tr = document.createElement('tr');
+        const diff = (pctA !== null && pctB !== null) ? Math.round(pctA - pctB) : null;
+        let diffBadge = '<span style="color: #64748b">N/A</span>';
+        if (diff !== null) {
+          const cls = diff >= 0 ? 'diff-pos' : 'diff-neg';
+          const sign = diff >= 0 ? '+' : '';
+          diffBadge = `<span class="diff-badge ${cls}">${sign}${diff}%ile</span>`;
+        }
+
+        tr.innerHTML = `
+          <td><strong>${ind.short}</strong></td>
+          <td>${formatMetricValue(ind, valA)}</td>
+          <td>${formatMetricValue(ind, valB)}</td>
+          <td>${diffBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateBoundaries();
+    }
+
+    function populateExemplars() {
+      const container = document.getElementById('exemplar-list');
+      container.innerHTML = '';
+
+      state.exemplars.forEach(ex => {
+        const item = document.createElement('div');
+        item.className = 'exemplar-item';
+        item.innerHTML = `
+          <div class="exemplar-title">${ex.title}</div>
+          <div class="exemplar-desc">${ex.desc}</div>
+        `;
+        item.addEventListener('click', () => {
+          state.centreA = state.centres[ex.centre_a_idx];
+          state.centreB = state.centres[ex.centre_b_idx];
+          updateSelectedCentres();
+          updateComparatorUI();
+          // Fit map to show both centres
+          const group = L.featureGroup([
+            L.marker([state.centreA.y, state.centreA.x]),
+            L.marker([state.centreB.y, state.centreB.x])
+          ]);
+          state.map.fitBounds(group.getBounds().pad(0.3));
+        });
+        container.appendChild(item);
+      });
+    }
+
+    function setupEventListeners() {
+      // Search box autocomplete
+      const searchBox = document.getElementById('search-box');
+      const dropdown = document.getElementById('search-dropdown');
+
+      searchBox.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 2) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        const matches = state.centres.filter(c =>
+          c.name.toLowerCase().includes(query) || c.rc_id.toLowerCase().includes(query)
+        ).slice(0, 10);
+
+        if (matches.length === 0) {
+          dropdown.innerHTML = '<div class="search-item"><span class="search-item-meta">No matching centres found</span></div>';
+        } else {
+          dropdown.innerHTML = matches.map(c => `
+            <div class="search-item" data-id="${c.i}">
+              <div class="search-item-name">${c.name}</div>
+              <div class="search-item-meta">
+                <span>${c.cls}</span> &bull; <span>${c.reg}</span>
+              </div>
+            </div>
+          `).join('');
+
+          dropdown.querySelectorAll('.search-item').forEach(el => {
+            el.addEventListener('click', () => {
+              const cid = parseInt(el.getAttribute('data-id'));
+              const c = state.centres[cid];
+              if (state.activeTab === 'compare') {
+                state.centreB = c;
+              } else {
+                state.centreA = c;
+              }
+              updateSelectedCentres();
+              state.map.flyTo([c.y, c.x], 15, { duration: 0.9 });
+              dropdown.style.display = 'none';
+              searchBox.value = '';
+            });
+          });
+        }
+        dropdown.style.display = 'block';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+          dropdown.style.display = 'none';
+        }
+      });
+
+      // Filter classification dropdown
+      document.getElementById('filter-class-select').addEventListener('change', (e) => {
+        state.filterClass = e.target.value;
+        renderMapPoints();
+      });
+
+      // Color by dropdown
+      document.getElementById('color-by-select').addEventListener('change', (e) => {
+        state.activeMetric = e.target.value;
+        renderMapPoints();
+      });
+
+      // Tab buttons
+      const tabProfileBtn = document.getElementById('tab-profile-btn');
+      const tabCompareBtn = document.getElementById('tab-compare-btn');
+      const profileContent = document.getElementById('tab-profile-content');
+      const compareContent = document.getElementById('tab-compare-content');
+
+      tabProfileBtn.addEventListener('click', () => {
+        state.activeTab = 'profile';
+        tabProfileBtn.classList.add('active');
+        tabCompareBtn.classList.remove('active');
+        profileContent.style.display = 'flex';
+        compareContent.style.display = 'none';
+        updateBoundaries();
+      });
+
+      tabCompareBtn.addEventListener('click', () => {
+        state.activeTab = 'compare';
+        tabCompareBtn.classList.add('active');
+        tabProfileBtn.classList.remove('active');
+        compareContent.style.display = 'flex';
+        profileContent.style.display = 'none';
+        updateComparatorUI();
+      });
+
+      document.getElementById('compare-mode-btn').addEventListener('click', () => {
+        tabCompareBtn.click();
+      });
+
+      document.getElementById('reset-view-btn').addEventListener('click', () => {
+        state.map.flyTo([54.5, -2.5], 6);
+      });
+
+      // Radar benchmark toggles
+      document.getElementById('toggle-hier').addEventListener('click', (e) => {
+        state.showHierarchyBench = !state.showHierarchyBench;
+        e.currentTarget.classList.toggle('active', state.showHierarchyBench);
+        updateSelectedCentres();
+      });
+
+      document.getElementById('toggle-reg').addEventListener('click', (e) => {
+        state.showRegionBench = !state.showRegionBench;
+        e.currentTarget.classList.toggle('active', state.showRegionBench);
+        updateSelectedCentres();
+      });
+
+      // Window resize handler for SVG charts
+      window.addEventListener('resize', () => {
+        if (state.activeTab === 'profile') {
+          updateSelectedCentres();
+        } else {
+          updateComparatorUI();
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

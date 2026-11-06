@@ -41,6 +41,25 @@ All scripts use repository-relative paths and compute the dataset from scratch:
 - [`Analysis Code/02_Calculate_Network_Indicators.py`](Analysis%20Code/02_Calculate_Network_Indicators.py): Computes all 11 indicators and `sidewalk_mapped_share` directly from the retail centre boundaries and extracted road network.
 - [`Analysis Code/03_Validate_Network_Indicators.py`](Analysis%20Code/03_Validate_Network_Indicators.py): Generates [`Validation_Scorecard.csv`](Output%20Data/Validation_Scorecard.csv) and the stratified perturbation sensitivity table [`Validation_Robustness.csv`](Output%20Data/Validation_Robustness.csv).
 - [`Analysis Code/04_Generate_Indicator_Profiles.py`](Analysis%20Code/04_Generate_Indicator_Profiles.py): Produces the national overview figure [`uk_retail_centre_indicator_popouts.png`](Output%20Data/Figures/uk_retail_centre_indicator_popouts.png), the methodological construction figure [`visual_qa_sidewalk_consolidation.png`](Output%20Data/Figures/visual_qa_sidewalk_consolidation.png), the 11 distribution profile figures [`profile_01_*.png` to `profile_11_*.png`](Output%20Data/Figures/), and [`Indicator_Profile_Examples.csv`](Output%20Data/Indicator_Profile_Examples.csv).
+- [`Analysis Code/05_Create_Editorial_Figures.py`](Analysis%20Code/05_Create_Editorial_Figures.py): Exports high-resolution dark-mode publication figures for the GeoDS retail centre morphology data story.
+- [`Analysis Code/06_Export_Explorer_Data.py`](Analysis%20Code/06_Export_Explorer_Data.py): Compiles optimized, lightweight JSON structures for the interactive web map, radar charts, and comparative benchmarks.
+
+### 1.3 Interactive Web Map and Dual Comparator
+
+An open-source, client-side web application is included in [`explorer/`](explorer/) for exploring and comparing all 9,623 UK retail centres:
+
+- **Interactive National Map:** Powered by Leaflet and CartoDB Dark Matter tiles, rendering all 9,623 retail centres with dynamic metric choropleth coloring and classification filtering.
+- **Instant Search Autocomplete:** Real-time search across all UK centre names and IDs with immediate map zoom and boundary polygon highlighting.
+- **11-Axis Morphology Radar Diagrams:** Normalized percentile radar charts comparing any selected centre against its hierarchical tier median, regional median, and national benchmarks.
+- **Side-by-Side Dual Comparator:** Pin any primary centre and comparator centre (or launch curated exemplar pairs such as *Bradford vs. Peel Retail Park* or *Bristol Old City vs. Leytonstone*) with overlaid dual radar charts and indicator delta metrics.
+
+To run the explorer locally:
+```bash
+python -m http.server 8000 --directory explorer
+# Then open http://localhost:8000 in your browser
+```
+
+To deploy on GitHub Pages, select the repository's GitHub Pages settings and choose the deployment branch and directory (or copy `explorer/` into `docs/`).
 
 ----
 
