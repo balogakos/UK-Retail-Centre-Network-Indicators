@@ -10,3 +10,5 @@ make_first_map.py
 make_merseyside_popout_map.py
 make_retail_metric_maps.py
 make_typology_map.py
+Input Data/*.pbf
+Input Data/*.parquet

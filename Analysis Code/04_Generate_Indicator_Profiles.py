@@ -3,7 +3,6 @@
 from pathlib import Path
 import sys
 import geopandas as gpd
-import igraph as ig
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
@@ -15,13 +14,15 @@ import shapely
 from shapely import STRtree
 from shapely.ops import polygonize
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'Source Code'))
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / 'Source Code'))
 from Helper_Functions import (
     ARTERIAL_CLASSES,
     CARFREE_CLASSES,
     STREET_GRID_EXCLUDED_TIERS,
     NetworkParams,
     build_consolidated_graph,
+    compute_distance_limited_edge_betweenness,
     detect_parallel_sidewalks,
     get_drive_mask,
     get_service_mask,
@@ -29,33 +30,33 @@ from Helper_Functions import (
 )
 
 
-# 1. Paths & Indicator Specifications -------------------------------------
+# 1. Repository-Relative Paths & Indicator Specifications -----------------
 
-CENTRES_PATH = Path('/Users/akosbalog/Downloads/retailcentre_bounds_uk.gpkg')
-ROADS_PARQUET = Path('outputs/v2/uk_roads_400m.parquet')
-IN_CSV = Path('Output Data/UK_Retail_Centre_Network_Indicators.csv')
-FIG_DIR = Path('Output Data/Figures')
-EXAMPLES_CSV = Path('Output Data/Indicator_Profile_Examples.csv')
+CENTRES_PATH = REPO_ROOT / 'Input Data' / 'retailcentre_bounds_uk.gpkg'
+ROADS_PARQUET = REPO_ROOT / 'Input Data' / 'uk_roads_400m.parquet'
+IN_CSV = REPO_ROOT / 'Output Data' / 'UK_Retail_Centre_Network_Indicators.csv'
+FIG_DIR = REPO_ROOT / 'Output Data' / 'Figures'
+EXAMPLES_CSV = REPO_ROOT / 'Output Data' / 'Indicator_Profile_Examples.csv'
 
 INDICATOR_SPECS = [
     ('walk_reach_400', 'profile_01_walk_reach_400.png',
      'Walkable Neighbourhood Reach (walk_reach_400)', '{:.2f}', 'universal', 'ring_walk'),
     ('drive_reach_400', 'profile_02_drive_reach_400.png',
-     'Vehicular Neighbourhood Reach (drive_reach_400)', '{:.2f}', 'universal', 'ring_drive'),
+     'Motorised Road-Network Embeddedness (drive_reach_400)', '{:.2f}', 'universal', 'ring_drive'),
     ('arterial_share', 'profile_03_arterial_share.png',
      'Arterial Traffic Road Share (arterial_share)', '{:.2f}', 'universal', 'arterial'),
     ('service_share', 'profile_04_service_share.png',
      'Service & Car-Park Access Share (service_share)', '{:.2f}', 'universal', 'service'),
     ('carfree_share', 'profile_05_carfree_share.png',
-     'True Car-Free Street Share (carfree_share)', '{:.2f}', 'universal', 'carfree'),
+     'Dedicated Pedestrian-Way Share (carfree_share)', '{:.2f}', 'universal', 'carfree'),
     ('walk_median_edge_len_m', 'profile_06_walk_median_edge_len_m.png',
      'Walkable Street Grain: Median Edge Length (walk_median_edge_len_m)', '{:.1f} m', 'street_grid', 'street_graph'),
     ('walk_meshedness', 'profile_07_walk_meshedness.png',
      'Street-Network Meshedness / Loop Ratio (walk_meshedness)', '{:.3f}', 'street_grid', 'street_graph'),
     ('walk_sightline_continuity', 'profile_08_walk_sightline_continuity.png',
-     'Through-Junction Sightline Continuity (walk_sightline_continuity)', '{:.2f}', 'street_grid', 'street_graph'),
+     'Descriptive Axial Sightline Continuity (walk_sightline_continuity)', '{:.2f}', 'street_grid', 'street_graph'),
     ('flow_concentration', 'profile_09_flow_concentration.png',
-     'Through-Movement Flow Concentration (flow_concentration)', '{:.2f}', 'street_grid', 'betweenness'),
+     'Through-Movement Flow Concentration: 400 m Metric Betweenness Gini (flow_concentration)', '{:.2f}', 'street_grid', 'betweenness'),
     ('walk_block_median_area_m2', 'profile_10_walk_block_median_area_m2.png',
      'Enclosed Urban Block Area (walk_block_median_area_m2)', '{:,.0f} m²', 'street_grid', 'blocks'),
     ('orientation_entropy', 'profile_11_orientation_entropy.png',
@@ -92,6 +93,14 @@ def pick_three_centres(df, col, filter_mode):
     if filter_mode == 'street_grid':
         sub = sub[~sub['Classification'].isin(STREET_GRID_EXCLUDED_TIERS)]
         sub = sub[(sub['Area_km2'] >= 0.09) & (sub['Area_km2'] <= 0.75)]
+    elif col == 'carfree_share':
+        sub_all = sub[(sub['Classification'] != 'Small Local Centre') & (sub['Area_km2'] >= 0.06) & (sub['Area_km2'] <= 0.85)].sort_values(col).reset_index(drop=True)
+        sub_st = sub[(~sub['Classification'].isin(STREET_GRID_EXCLUDED_TIERS)) & (sub['Area_km2'] >= 0.09) & (sub['Area_km2'] <= 0.75)].sort_values(col).reset_index(drop=True)
+        return [
+            ('Low (8th pct)', sub_all.iloc[int(len(sub_all) * 0.08)]),
+            ('Median (50th pct)', sub_st.iloc[int(len(sub_st) * 0.50)]),
+            ('High (92nd pct)', sub_st.iloc[int(len(sub_st) * 0.92)]),
+        ]
     else:
         sub = sub[sub['Classification'] != 'Small Local Centre']
         sub = sub[(sub['Area_km2'] >= 0.06) & (sub['Area_km2'] <= 0.85)]
@@ -163,7 +172,7 @@ def plot_panel(ax, row, cand, params, highlight_mode):
             ax.add_collection(LineCollection(s_srv, colors='#d95f02', linewidths=2.0, zorder=4))
     elif highlight_mode == 'carfree':
         cf = wm & np.isin(fc, list(CARFREE_CLASSES))
-        shared = wm & ~cf
+        shared = wm_street & ~cf
         s_sh = _lines_to_segments(shapely.intersection(geoms[shared], core))
         s_cf = _lines_to_segments(shapely.intersection(geoms[cf], core))
         if s_sh:
@@ -175,8 +184,7 @@ def plot_panel(ax, row, cand, params, highlight_mode):
         if gw is not None:
             core_e = shapely.intersects(gw['egeom'], core)
             if core_e.sum() >= 5:
-                ig_g = ig.Graph(n=gw['N'], edges=list(zip(gw['eu'].tolist(), gw['ev'].tolist())))
-                eb = np.array(ig_g.edge_betweenness(directed=False, cutoff=params.reach_m, weights=gw['elen'].tolist()))
+                eb = compute_distance_limited_edge_betweenness(gw, limit_m=params.reach_m)
                 eb_core = eb[core_e]
                 geoms_core = shapely.intersection(gw['egeom'][core_e], core)
                 q75 = np.quantile(eb_core, 0.75) if len(eb_core) else 0
@@ -253,12 +261,12 @@ def _legend_for_mode(highlight_mode):
         ]
     elif highlight_mode == 'carfree':
         base += [
-            Line2D([0], [0], color='#238b45', lw=2.2, label='True car-free streets (pedestrian/footway/path, sidewalks removed)'),
+            Line2D([0], [0], color='#238b45', lw=2.2, label='Dedicated pedestrian ways (pedestrian/footway/path, sidewalks removed)'),
             Line2D([0], [0], color='#6baed6', lw=1.3, label='Shared streets'),
         ]
     elif highlight_mode == 'betweenness':
         base += [
-            Line2D([0], [0], color='#cb181d', lw=2.3, label='Primary movement corridors (top 25% betweenness)'),
+            Line2D([0], [0], color='#cb181d', lw=2.3, label='Primary movement corridors (top 25% 400 m betweenness)'),
             Line2D([0], [0], color='#6baed6', lw=1.2, label='Secondary walkable streets'),
         ]
     elif highlight_mode == 'blocks':

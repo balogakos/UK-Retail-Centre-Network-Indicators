@@ -1,19 +1,21 @@
 ## Extracting OpenStreetMap Highway Networks for UK Retail Centres
 
+import argparse
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 import geopandas as gpd
 import pandas as pd
 import shapely
 
 
-# 1. File Paths & Tag Configuration ---------------------------------------
+# 1. Default Repository-Relative Paths & Tag Configuration ----------------
 
-PBF_PATH = Path('/Users/akosbalog/Downloads/united-kingdom-latest.osm.pbf')
-CENTRES_PATH = Path('/Users/akosbalog/Downloads/retailcentre_bounds_uk.gpkg')
-OUT_PARQUET = Path('outputs/v2/uk_roads_400m.parquet')
-TMP_PBF = Path('/tmp/uk_highways_filtered.osm.pbf')
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_PBF = REPO_ROOT / 'Input Data' / 'united-kingdom-latest.osm.pbf'
+DEFAULT_CENTRES = REPO_ROOT / 'Input Data' / 'retailcentre_bounds_uk.gpkg'
+DEFAULT_OUT_PARQUET = REPO_ROOT / 'Input Data' / 'uk_roads_400m.parquet'
 
 KEEP_CLASSES = {
     'motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link',
@@ -21,7 +23,10 @@ KEEP_CLASSES = {
     'unclassified', 'living_street', 'service', 'pedestrian', 'footway', 'path', 'steps'
 }
 
-TAG_KEYS = ('footway', 'service', 'access', 'foot', 'motor_vehicle', 'bridge', 'tunnel', 'layer')
+TAG_KEYS = (
+    'footway', 'service', 'access', 'foot', 'motor_vehicle',
+    'oneway', 'bridge', 'tunnel', 'layer'
+)
 TAG_RE = {k: re.compile(rf'"{k}"=>"([^"]*)"') for k in TAG_KEYS}
 
 
@@ -32,19 +37,26 @@ def extract_tag(series, key):
 
 
 def main():
-    OUT_PARQUET.parent.mkdir(parents=True, exist_ok=True)
-    if not TMP_PBF.exists():
+    parser = argparse.ArgumentParser(description='Extract OSM highway ways within 400 m of UK retail centres.')
+    parser.add_argument('--pbf', type=Path, default=DEFAULT_PBF, help='Path to united-kingdom-latest.osm.pbf')
+    parser.add_argument('--centres', type=Path, default=DEFAULT_CENTRES, help='Path to retailcentre_bounds_uk.gpkg')
+    parser.add_argument('--out', type=Path, default=DEFAULT_OUT_PARQUET, help='Output Parquet path')
+    args = parser.parse_args()
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    tmp_pbf = Path(tempfile.gettempdir()) / 'uk_highways_filtered.osm.pbf'
+    if not tmp_pbf.exists():
         subprocess.run(
-            ['osmium', 'tags-filter', str(PBF_PATH), 'w/highway', '-o', str(TMP_PBF), '--overwrite'],
+            ['osmium', 'tags-filter', str(args.pbf), 'w/highway', '-o', str(tmp_pbf), '--overwrite'],
             check=True
         )
 
-    centres = gpd.read_file(CENTRES_PATH).to_crs(27700)
+    centres = gpd.read_file(args.centres).to_crs(27700)
     mask_27700 = shapely.union_all(shapely.buffer(centres.geometry.to_numpy(), 450.0))
     mask_4326 = gpd.GeoSeries([mask_27700], crs=27700).to_crs(4326).iloc[0]
 
     gdf = gpd.read_file(
-        TMP_PBF,
+        tmp_pbf,
         layer='lines',
         mask=mask_4326,
         columns=['osm_id', 'highway', 'other_tags', 'geometry']
@@ -57,7 +69,7 @@ def main():
     keep_idx = pd.unique(tree.query(bufs, predicate='intersects')[1])
     gdf = gdf.iloc[keep_idx].reset_index(drop=True)
 
-    # 3. Parse Ancillary OSM Tags (Sidewalks, Service Types, Grade Separation)
+    # 3. Parse Ancillary OSM Tags (Sidewalks, Service Types, One-Way, Grade Separation)
     ot = gdf['other_tags'].fillna('')
     out = gpd.GeoDataFrame(
         {
@@ -68,6 +80,7 @@ def main():
             'access': extract_tag(ot, 'access'),
             'foot': extract_tag(ot, 'foot'),
             'motor_vehicle': extract_tag(ot, 'motor_vehicle'),
+            'oneway': extract_tag(ot, 'oneway'),
         },
         geometry=gdf.geometry,
         crs=27700
@@ -81,8 +94,8 @@ def main():
         ~layer.isin(['', '0'])
     )
 
-    out.to_parquet(OUT_PARQUET, index=False)
-    print(f'Saved {len(out):,} highway segments to {OUT_PARQUET}')
+    out.to_parquet(args.out, index=False)
+    print(f'Saved {len(out):,} highway segments to {args.out}')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,12 @@
+indicator,sample_N,rho_buf50,rho_buf150,rho_tol5,rho_tol15,rho_keep_sidewalks,min_rho_geom_perturb
+walk_reach_400,525,1.0,1.0,0.997,0.994,0.899,0.994
+drive_reach_400,525,1.0,1.0,0.998,0.998,1.0,0.998
+arterial_share,525,0.956,0.967,1.0,1.0,1.0,0.956
+service_share,525,0.946,0.966,1.0,1.0,1.0,0.946
+carfree_share,525,0.932,0.956,1.0,1.0,0.793,0.932
+walk_median_edge_len_m,525,0.875,0.918,0.951,0.942,0.905,0.875
+walk_meshedness,525,0.841,0.893,0.974,0.964,0.78,0.841
+walk_sightline_continuity,525,0.859,0.876,0.892,0.878,0.919,0.859
+flow_concentration,525,0.894,0.912,0.971,0.958,0.86,0.894
+walk_block_median_area_m2,525,0.849,0.915,1.0,1.0,0.909,0.849
+orientation_entropy,525,0.94,0.959,0.992,0.991,0.967,0.94
