@@ -103,7 +103,6 @@ def get_service_mask(df):
 
 
 def detect_parallel_sidewalks(df):
-    """Identify footways mapped as parallel roadside pavements or crossings."""
     fc = df['fclass'].to_numpy()
     tagged = _isin(df['footway'], ['sidewalk', 'crossing', 'traffic_island']) & (fc == 'footway')
     cand = (fc == 'footway') & ~tagged
@@ -143,7 +142,6 @@ def _explode_lines(geoms, clip_poly):
 
 
 def build_consolidated_graph(geoms, grade_sep, clip_poly, tol_m):
-    """Planarise ground-level ways, merge degree-2 chains, and consolidate junctions within tol_m."""
     geoms = np.asarray(geoms, dtype=object)
     grade_sep = np.asarray(grade_sep, dtype=bool)
     ground = _explode_lines(geoms[~grade_sep], clip_poly)
@@ -223,7 +221,6 @@ def _gini(values):
 
 
 def compute_ring_reach(g, poly, src_buf_m, limit_m):
-    """Proportion of surrounding-ring street length reachable within limit_m network distance."""
     if g is None:
         return np.nan
     x, y = g['xy'][:, 0], g['xy'][:, 1]
@@ -265,7 +262,6 @@ def _endpoint_bearings(g, edges):
 
 
 def compute_centre_indicators(poly, cand, classification=None, params=NetworkParams()):
-    """Compute the 9 universal core indicators and 2 street-grid indicators for a retail centre."""
     ctx = poly.buffer(params.context_m)
     core = poly.buffer(params.buffer_m)
     res = {k: np.nan for k in ALL_INDICATORS}
@@ -284,7 +280,6 @@ def compute_centre_indicators(poly, cand, classification=None, params=NetworkPar
     wm = get_walk_mask(cand)
     if params.sidewalk_mode == 'remove':
         wm &= ~sw
-    # Street-structure mask excludes highway=service (car-park access lanes and loading rings)
     wm_street = wm & (cand['fclass'] != 'service').to_numpy()
     dm = get_drive_mask(cand)
     sm = get_service_mask(cand)
@@ -308,36 +303,58 @@ def compute_centre_indicators(poly, cand, classification=None, params=NetworkPar
     gw_street = build_consolidated_graph(geoms[wm_street], gs[wm_street], ctx, params.tol_m) if wm_street.sum() >= 2 else None
     gd = build_consolidated_graph(geoms[dm], gs[dm], ctx, params.tol_m) if dm.sum() >= 2 else None
 
-    res['n_walk_edges'] = 0 if gw is None else len(gw['elen'])
+    res['n_walk_edges'] = 0 if gw_street is None else len(gw_street['elen'])
     res['n_drive_edges'] = 0 if gd is None else len(gd['elen'])
 
     # 3. External Ring Reach (400 m)
     res['walk_reach_400'] = compute_ring_reach(gw, poly, 30.0, params.reach_m)
     res['drive_reach_400'] = compute_ring_reach(gd, poly, 50.0, params.reach_m)
 
-    # 4. Walk Graph Metrics (Grain, Flow Concentration, Sightline Continuity)
+    # 4. Car-Park-Cleaned Street Topology Metrics (Grain, Meshedness, Sightlines, Flow, Blocks, Entropy)
     shapely.prepare(core)
-    if gw is not None:
-        core_e = shapely.intersects(gw['egeom'], core)
-        x, y = gw['xy'][:, 0], gw['xy'][:, 1]
-        core_n = shapely.contains_xy(core, x, y)
+    if gw_street is not None:
+        core_se = shapely.intersects(gw_street['egeom'], core)
+        sx, sy = gw_street['xy'][:, 0], gw_street['xy'][:, 1]
+        core_sn = shapely.contains_xy(core, sx, sy)
 
-        if core_e.sum() >= 3:
-            res['walk_median_edge_len_m'] = float(np.median(gw['elen'][core_e]))
+        if core_se.sum() >= 3:
+            res['walk_median_edge_len_m'] = float(np.median(gw_street['elen'][core_se]))
 
-            if core_e.sum() >= 5:
-                ig_g = ig.Graph(n=gw['N'], edges=list(zip(gw['eu'].tolist(), gw['ev'].tolist())))
-                eb = np.array(ig_g.edge_betweenness(directed=False, cutoff=params.reach_m, weights=gw['elen'].tolist()))
-                res['flow_concentration'] = _gini(eb[core_e])
+            e_idx = np.where(core_se)[0]
+            nodes, inv = np.unique(
+                np.concatenate([gw_street['eu'][e_idx], gw_street['ev'][e_idx]]),
+                return_inverse=True
+            )
+            E, Nn = len(e_idx), len(nodes)
+            if Nn >= 4:
+                sub = coo_matrix((np.ones(E), (inv[:E], inv[E:])), shape=(Nn, Nn))
+                C = connected_components(sub, directed=False)[0]
+                res['walk_meshedness'] = float(max(0.0, (E - Nn + C) / (2 * Nn - 5)))
 
-        junc = core_n & (gw['deg'] >= 3)
-        if junc.sum() >= 3 and core_e.sum() > 0:
-            e_idx = np.where(core_e)[0]
-            bs, be = _endpoint_bearings(gw, e_idx)
+            if core_se.sum() >= 5:
+                ig_g = ig.Graph(n=gw_street['N'], edges=list(zip(gw_street['eu'].tolist(), gw_street['ev'].tolist())))
+                eb = np.array(ig_g.edge_betweenness(directed=False, cutoff=params.reach_m, weights=gw_street['elen'].tolist()))
+                res['flow_concentration'] = _gini(eb[core_se])
+
+            if classification not in STREET_GRID_EXCLUDED_TIERS:
+                dx = sx[gw_street['ev'][e_idx]] - sx[gw_street['eu'][e_idx]]
+                dy = sy[gw_street['ev'][e_idx]] - sy[gw_street['eu'][e_idx]]
+                ang = np.degrees(np.arctan2(dy, dx)) % 360.0
+                w = gw_street['elen'][e_idx]
+                bins = np.zeros(36)
+                for a_, w_ in ((ang, w), ((ang + 180.0) % 360.0, w)):
+                    bins += np.bincount(((a_ + 5.0) % 360.0 // 10.0).astype(int), weights=w_, minlength=36)[:36]
+                pr = bins[bins > 0] / bins.sum()
+                res['orientation_entropy'] = float(-(pr * np.log(pr)).sum() / math.log(36)) if len(pr) > 1 else 0.0
+
+        junc = core_sn & (gw_street['deg'] >= 3)
+        if junc.sum() >= 3 and core_se.sum() > 0:
+            e_idx = np.where(core_se)[0]
+            bs, be = _endpoint_bearings(gw_street, e_idx)
             inc = {}
             for k, e in enumerate(e_idx):
-                inc.setdefault(gw['eu'][e], []).append(bs[k])
-                inc.setdefault(gw['ev'][e], []).append(be[k])
+                inc.setdefault(gw_street['eu'][e], []).append(bs[k])
+                inc.setdefault(gw_street['ev'][e], []).append(be[k])
             cont = []
             for nd in np.where(junc)[0]:
                 b = inc.get(nd, [])
@@ -349,31 +366,6 @@ def compute_centre_indicators(poly, cand, classification=None, params=NetworkPar
                 cont.append(bool(np.any(np.triu(np.abs(180.0 - diff) <= 20.0, 1))))
             if len(cont) >= 3:
                 res['walk_sightline_continuity'] = float(np.mean(cont))
-
-    # 5. Car-Park-Cleaned Street Structure Metrics (Meshedness, Block Area, Orientation Entropy)
-    if gw_street is not None:
-        core_se = shapely.intersects(gw_street['egeom'], core)
-        if core_se.sum() >= 3:
-            e_idx = np.where(core_se)[0]
-            nodes, inv = np.unique(np.concatenate([gw_street['eu'][e_idx], gw_street['ev'][e_idx]]), return_inverse=True)
-            E, Nn = len(e_idx), len(nodes)
-            if Nn >= 4:
-                sub = coo_matrix((np.ones(E), (inv[:E], inv[E:])), shape=(Nn, Nn))
-                C = connected_components(sub, directed=False)[0]
-                res['walk_meshedness'] = float(max(0.0, (E - Nn + C) / (2 * Nn - 5)))
-
-            # Street-Grid Set: compute only for eligible traditional street centres
-            if classification not in STREET_GRID_EXCLUDED_TIERS:
-                sx, sy = gw_street['xy'][:, 0], gw_street['xy'][:, 1]
-                dx = sx[gw_street['ev'][e_idx]] - sx[gw_street['eu'][e_idx]]
-                dy = sy[gw_street['ev'][e_idx]] - sy[gw_street['eu'][e_idx]]
-                ang = np.degrees(np.arctan2(dy, dx)) % 360.0
-                w = gw_street['elen'][e_idx]
-                bins = np.zeros(36)
-                for a_, w_ in ((ang, w), ((ang + 180.0) % 360.0, w)):
-                    bins += np.bincount(((a_ + 5.0) % 360.0 // 10.0).astype(int), weights=w_, minlength=36)[:36]
-                pr = bins[bins > 0] / bins.sum()
-                res['orientation_entropy'] = float(-(pr * np.log(pr)).sum() / math.log(36)) if len(pr) > 1 else 0.0
 
         if classification not in STREET_GRID_EXCLUDED_TIERS and gw_street['merged'] is not None:
             polys = np.array(list(polygonize(gw_street['merged'])), dtype=object)

@@ -49,13 +49,13 @@ INDICATOR_SPECS = [
     ('carfree_share', 'profile_05_carfree_share.png',
      'True Car-Free Street Share (carfree_share)', '{:.2f}', 'universal', 'carfree'),
     ('walk_median_edge_len_m', 'profile_06_walk_median_edge_len_m.png',
-     'Walkable Street Grain: Median Edge Length (walk_median_edge_len_m)', '{:.1f} m', 'universal', 'grain'),
+     'Walkable Street Grain: Median Edge Length (walk_median_edge_len_m)', '{:.1f} m', 'street_grid', 'street_graph'),
     ('walk_meshedness', 'profile_07_walk_meshedness.png',
-     'Street-Network Meshedness / Loop Ratio (walk_meshedness)', '{:.3f}', 'universal', 'street_graph'),
+     'Street-Network Meshedness / Loop Ratio (walk_meshedness)', '{:.3f}', 'street_grid', 'street_graph'),
     ('walk_sightline_continuity', 'profile_08_walk_sightline_continuity.png',
-     'Through-Junction Sightline Continuity (walk_sightline_continuity)', '{:.2f}', 'universal', 'sightline'),
+     'Through-Junction Sightline Continuity (walk_sightline_continuity)', '{:.2f}', 'street_grid', 'street_graph'),
     ('flow_concentration', 'profile_09_flow_concentration.png',
-     'Through-Movement Flow Concentration (flow_concentration)', '{:.2f}', 'universal', 'betweenness'),
+     'Through-Movement Flow Concentration (flow_concentration)', '{:.2f}', 'street_grid', 'betweenness'),
     ('walk_block_median_area_m2', 'profile_10_walk_block_median_area_m2.png',
      'Enclosed Urban Block Area (walk_block_median_area_m2)', '{:,.0f} m²', 'street_grid', 'blocks'),
     ('orientation_entropy', 'profile_11_orientation_entropy.png',
@@ -91,7 +91,7 @@ def pick_three_centres(df, col, filter_mode):
     sub = df.dropna(subset=[col]).copy()
     if filter_mode == 'street_grid':
         sub = sub[~sub['Classification'].isin(STREET_GRID_EXCLUDED_TIERS)]
-        sub = sub[(sub['Area_km2'] >= 0.08) & (sub['Area_km2'] <= 0.85)]
+        sub = sub[(sub['Area_km2'] >= 0.09) & (sub['Area_km2'] <= 0.75)]
     else:
         sub = sub[sub['Classification'] != 'Small Local Centre']
         sub = sub[(sub['Area_km2'] >= 0.06) & (sub['Area_km2'] <= 0.85)]
@@ -171,20 +171,20 @@ def plot_panel(ax, row, cand, params, highlight_mode):
         if s_cf:
             ax.add_collection(LineCollection(s_cf, colors='#238b45', linewidths=2.2, zorder=4))
     elif highlight_mode == 'betweenness':
-        gw = build_consolidated_graph(geoms[wm], gs[wm], ctx, params.tol_m)
+        gw = build_consolidated_graph(geoms[wm_street], gs[wm_street], ctx, params.tol_m)
         if gw is not None:
             core_e = shapely.intersects(gw['egeom'], core)
             if core_e.sum() >= 5:
                 ig_g = ig.Graph(n=gw['N'], edges=list(zip(gw['eu'].tolist(), gw['ev'].tolist())))
                 eb = np.array(ig_g.edge_betweenness(directed=False, cutoff=params.reach_m, weights=gw['elen'].tolist()))
                 eb_core = eb[core_e]
-                geoms_core = gw['egeom'][core_e]
+                geoms_core = shapely.intersection(gw['egeom'][core_e], core)
                 q75 = np.quantile(eb_core, 0.75) if len(eb_core) else 0
                 spine = eb_core >= max(q75, 1e-6)
                 s_back = _lines_to_segments(geoms_core[~spine])
                 s_spine = _lines_to_segments(geoms_core[spine])
                 if s_back:
-                    ax.add_collection(LineCollection(s_back, colors='#6baed6', linewidths=1.1, zorder=2))
+                    ax.add_collection(LineCollection(s_back, colors='#6baed6', linewidths=1.15, zorder=2))
                 if s_spine:
                     ax.add_collection(LineCollection(s_spine, colors='#cb181d', linewidths=2.3, zorder=4))
     elif highlight_mode == 'blocks':
@@ -204,8 +204,7 @@ def plot_panel(ax, row, cand, params, highlight_mode):
             if st_segs:
                 ax.add_collection(LineCollection(st_segs, colors='#08519c', linewidths=1.4, zorder=3))
     else:
-        use_mask = wm_street if highlight_mode == 'street_graph' else wm
-        gw = build_consolidated_graph(geoms[use_mask], gs[use_mask], core, params.tol_m)
+        gw = build_consolidated_graph(geoms[wm_street], gs[wm_street], core, params.tol_m)
         if gw is not None:
             segs = _lines_to_segments(gw['egeom'])
             if segs:
@@ -269,7 +268,7 @@ def _legend_for_mode(highlight_mode):
         ]
     else:
         base += [
-            Line2D([0], [0], color='#08519c', lw=1.5, label='Consolidated walkable street network (sidewalks removed)'),
+            Line2D([0], [0], color='#08519c', lw=1.5, label='Consolidated street network (sidewalks & car parks removed)'),
             Line2D([0], [0], marker='o', color='w', markerfacecolor='#d94801', markersize=5, label='Street junction (degree >= 3)'),
         ]
     return base

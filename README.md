@@ -51,7 +51,7 @@ Raw OpenStreetMap street graphs introduce three systematic biases when applied t
 
 1. **Sidewalk Mapping Artefacts:** In cities where OSM contributors map roadside pavements as separate parallel `highway=footway` ways, naive topological metrics count every pavement crossing as two extra street junctions and treat roadside pavements as car-free streets. Our pipeline identifies and removes tagged pavements (`footway=sidewalk`, `crossing`, `traffic_island`) and untagged `footway` ways running parallel ($\ge 80\%$ of sample points within $12\text{ m}$) to a motorised road before building the pedestrian street graph.
 2. **Unified Consolidation Tolerance:** Both pedestrian and vehicular graphs are planarised on ground-level ways (preserving grade-separated bridges and tunnels) and consolidated at a uniform **10 m junction tolerance** within a 400 m context buffer, reading out core metrics on a 100 m buffer around the retail centre boundary.
-3. **Car-Park Loop Separation:** Off-street car-park circulation (`highway=service`) is measured explicitly via `service_share` and excluded prior to computing street-loop redundancy (`walk_meshedness`), enclosed block area (`walk_block_median_area_m2`), and bearing entropy (`orientation_entropy`), preventing car-park aisles from registering as small urban street blocks.
+3. **Car-Park Loop Separation:** Off-street car-park circulation (`highway=service`) is measured explicitly via `service_share` and excluded prior to computing internal street-topology indicators (`walk_median_edge_len_m`, `walk_meshedness`, `walk_sightline_continuity`, `flow_concentration`, `walk_block_median_area_m2`, and `orientation_entropy`), preventing 20 m parking-bay aisles from masquerading as fine-grained urban streets or small street blocks.
 
 ![Visual QA of Sidewalk Removal and 10 m Junction Consolidation](Output%20Data/Figures/visual_qa_sidewalk_consolidation.png)
 
@@ -64,10 +64,10 @@ Raw OpenStreetMap street graphs introduce three systematic biases when applied t
 | `arterial_share` | Universal (`9,623`) | 0.53% | 0.253 (0.058–0.370) | +0.125 | 0.088 | +0.112 | +0.149 | +0.444 |
 | `service_share` | Universal (`9,623`) | 0.53% | 0.292 (0.185–0.412) | +0.086 | 0.199 | +0.047 | -0.145 | +0.689 |
 | `carfree_share` | Universal (`9,623`) | 0.02% | 0.122 (0.056–0.204) | +0.162 | 0.068 | -0.044 | +0.677 | -0.419 |
-| `walk_median_edge_len_m` | Universal (`9,623`) | 0.06% | 40.0 m (34.5–48.3) | -0.128 | 0.127 | -0.140 | -0.434 | -0.257 |
+| `walk_median_edge_len_m` | Universal (`9,623`) | 0.43% | 54.2 m (44.0–68.4) | -0.180 | 0.072 | -0.123 | -0.591 | +0.016 |
 | `walk_meshedness` | Universal (`9,623`) | 0.43% | 0.063 (0.034–0.094) | +0.352 | 0.201 | +0.076 | +0.708 | -0.288 |
-| `walk_sightline_continuity` | Universal (`9,623`) | 0.19% | 0.900 (0.851–0.944) | -0.038 | 0.097 | +0.040 | +0.046 | -0.155 |
-| `flow_concentration` | Universal (`9,623`) | 0.09% | 0.464 (0.422–0.509) | +0.212 | 0.273 | +0.216 | +0.197 | +0.570 |
+| `walk_sightline_continuity` | Universal (`9,623`) | 1.86% | 0.900 (0.833–0.960) | -0.057 | 0.111 | +0.052 | +0.004 | -0.119 |
+| `flow_concentration` | Universal (`9,623`) | 0.88% | 0.431 (0.384–0.478) | +0.268 | 0.186 | +0.208 | +0.482 | +0.198 |
 | `walk_block_median_area_m2` | Street-Grid (`1,521`) | 0.07% | 7,405 $\text{m}^2$ (4,993–11,213) | -0.075 | 0.076 | +0.001 | -0.449 | — |
 | `orientation_entropy` | Street-Grid (`1,521`) | 0.00% | 0.917 (0.872–0.945) | +0.323 | 0.142 | -0.014 | +0.193 | — |
 
@@ -162,14 +162,14 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 ### 3.6 `walk_median_edge_len_m` — Walkable Street Grain (Intersection Spacing)
 
 - **Concept:** Urban street grain and intersection frequency (Jacobs 1961; [Siksna 1997](https://doi.org/10.51347/jum.v1i1.4048)).
-- **Construction:** Median length (in metres) of consolidated walkable street edges intersecting the 100 m core readout buffer.
-- **Interpretation:** Lower values (`28–36 m`) indicate a fine-grained network with frequent turning opportunities and closely spaced intersections; higher values (`> 45 m`) indicate coarse, long-block road layouts (Cliff's $\delta = -0.434$ comparing Regional Centres to Small Local Centres).
+- **Construction:** Median length (in metres) of consolidated street edges (excluding off-street `highway=service` car-park lanes and parallel sidewalks) intersecting the 100 m core readout buffer.
+- **Interpretation:** Lower values (`34–42 m`) indicate a fine-grained urban network with closely spaced street intersections and frequent turning opportunities; higher values (`> 60 m`) indicate coarse, long-block suburban road layouts (Cliff's $\delta = -0.591$ comparing Regional Centres to Small Local Centres; within-tier $|\rho_{\text{area}}| = 0.072$).
 
 | Band | `RC_ID` | Retail Centre | Classification | Area ($\text{km}^2$) | `walk_median_edge_len_m` |
 |---|---:|---|---|---:|---:|
-| **Low (8th pct — Fine Grain)** | 8535 | Ely Leisure Village, East Cambridgeshire | Small Retail Park | 0.093 | **29.1 m** |
-| **Median (50th pct)** | 32 | North Laine, Brighton and Hove | Regional Centre | 0.325 | **35.7 m** |
-| **High (92nd pct — Coarse Grain)** | 9359 | Heaton Mills Retail Park, Manchester | Small Retail Park | 0.065 | **46.0 m** |
+| **Low (8th pct — Fine Grain)** | 69 | Wakefield, Yorkshire and The Humber | Major Town Centre | 0.416 | **36.4 m** |
+| **Median (50th pct)** | 200 | Lichfield, West Midlands | Major Town Centre | 0.139 | **47.3 m** |
+| **High (92nd pct — Coarse Grain)** | 697 | Station Road, New Milton, New Forest | District Centre | 0.173 | **67.7 m** |
 
 ![Walkable Street Grain Profiles](Output%20Data/Figures/profile_06_walk_median_edge_len_m.png)
 
@@ -185,9 +185,9 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 | Band | `RC_ID` | Retail Centre | Classification | Area ($\text{km}^2$) | `walk_meshedness` |
 |---|---:|---|---|---:|---:|
-| **Low (8th pct)** | 9569 | Toby Carvery, North Tyneside | Small Retail Park | 0.061 | **0.037** |
-| **Median (50th pct)** | 6290 | Alvis Retail Park, Coventry | Small Retail Park | 0.105 | **0.088** |
-| **High (92nd pct)** | 56 | George Street, Edinburgh City Centre | Regional Centre | 0.265 | **0.140** |
+| **Low (8th pct)** | 1465 | High Street, Dingwall, Highland | Local Centre | 0.102 | **0.052** |
+| **Median (50th pct)** | 1326 | Main Street, Uddingston, South Lanarkshire | Local Centre | 0.092 | **0.096** |
+| **High (92nd pct)** | 28 | Buchanan Street, Glasgow City Centre | Regional Centre | 0.347 | **0.144** |
 
 ![Street-Network Meshedness Profiles](Output%20Data/Figures/profile_07_walk_meshedness.png)
 
@@ -196,14 +196,14 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 ### 3.8 `walk_sightline_continuity` — Through-Junction Angular Continuity
 
 - **Concept:** Visual legibility and axial street continuation across intersections ([Hillier & Iida 2005](https://doi.org/10.1007/11556114_30); [Porta et al. 2006b](https://doi.org/10.1016/j.physa.2005.12.063)).
-- **Construction:** Proportion of junctions of degree $k \ge 3$ within the 100 m core that possess at least one pair of incident edges continuing straight through the junction within a $\le 20^\circ$ angular deflection.
-- **Interpretation:** High scores (`> 0.92`) indicate continuous axial thoroughfares; lower scores (`< 0.82`) indicate fragmented layouts dominated by offset T-junctions and cranked turns. Size-invariant ($\rho_{\text{area}} = -0.038$ across street centres).
+- **Construction:** Proportion of street junctions of degree $k \ge 3$ within the 100 m core (on the car-park-cleaned street graph) that possess at least one pair of incident edges continuing straight through the junction within a $\le 20^\circ$ angular deflection.
+- **Interpretation:** High scores (`> 0.94`) indicate linear high streets with uninterrupted axial continuity across cross-streets; lower scores (`< 0.83`) indicate medieval or Victorian layouts with frequent offset T-junctions and cranked intersections. Size-invariant ($\rho_{\text{area}} = -0.057$ across street centres).
 
 | Band | `RC_ID` | Retail Centre | Classification | Area ($\text{km}^2$) | `walk_sightline_continuity` |
 |---|---:|---|---|---:|---:|
-| **Low (8th pct)** | 2842 | Springkerse Retail Park, Stirling | Large Retail Park | 0.292 | **0.81** |
-| **Median (50th pct)** | 520 | Abingdon-on-Thames, Vale of White Horse | Town Centre | 0.109 | **0.89** |
-| **High (92nd pct)** | 9258 | Churchill Way West Retail Park, Salisbury | Small Retail Park | 0.061 | **0.95** |
+| **Low (8th pct)** | 159 | Walham Green, Hammersmith and Fulham | Town Centre | 0.210 | **0.80** |
+| **Median (50th pct)** | 77 | Old Market Square, Nottingham City Centre | Regional Centre | 0.266 | **0.89** |
+| **High (92nd pct)** | 889 | High Street, Thornton Heath, Croydon | District Centre | 0.114 | **0.96** |
 
 ![Through-Junction Sightline Continuity Profiles](Output%20Data/Figures/profile_08_walk_sightline_continuity.png)
 
@@ -212,14 +212,14 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 ### 3.9 `flow_concentration` — Through-Movement Hierarchy (Betweenness Gini)
 
 - **Concept:** Concentration of shortest-path pedestrian movement onto a single spine versus dispersion across a multi-street grid ([Freeman 1977](https://doi.org/10.2307/3033543); [Porta et al. 2006a](https://doi.org/10.1068/b32045)).
-- **Construction:** Gini coefficient of local shortest-path edge betweenness (400 m path cutoff on the 400 m context graph) evaluated across walkable edges within the 100 m core.
-- **Interpretation:** Lower values (`~0.42–0.45`) indicate balanced multi-street grids where movement distributes across parallel routes (e.g. Stockton-on-Tees); higher values (`> 0.55`) indicate dendritic or ribbon centres where all local movement funnels along a single main corridor.
+- **Construction:** Gini coefficient of local shortest-path edge betweenness (400 m path cutoff on the 400 m context street graph, excluding `highway=service` car-park lanes) evaluated across street edges within the 100 m core.
+- **Interpretation:** Lower values (`~0.38–0.41`) indicate compact multi-street centres where local movement distributes evenly across parallel lanes; higher values (`> 0.50`) indicate hierarchical centres where shortest paths funnel onto a primary corridor spine (Cliff's $\delta = +0.482$ across the retail hierarchy).
 
 | Band | `RC_ID` | Retail Centre | Classification | Area ($\text{km}^2$) | `flow_concentration` |
 |---|---:|---|---|---:|---:|
-| **Low (8th pct — Distributed Grid)** | 184 | Stockton-on-Tees | Major Town Centre | 0.320 | **0.44** |
-| **Median (50th pct)** | 654 | Warminster, Wiltshire | Market Town | 0.085 | **0.50** |
-| **High (92nd pct — Single Spine)** | 4381 | Strathkelvin Retail Park, East Dunbartonshire | Large Retail Park | 0.158 | **0.58** |
+| **Low (8th pct — Distributed Grid)** | 1118 | Willenhall, Walsall | Local Centre | 0.134 | **0.40** |
+| **Median (50th pct)** | 750 | Piccadilly Basin, Manchester City Centre | Regional Centre | 0.121 | **0.46** |
+| **High (92nd pct — Corridor Spine)** | 657 | The Mailbox, Birmingham City Centre | Regional Centre | 0.154 | **0.54** |
 
 ![Through-Movement Flow Concentration Profiles](Output%20Data/Figures/profile_09_flow_concentration.png)
 
@@ -229,13 +229,13 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 - **Concept:** Physical scale of enclosed urban street blocks ([Siksna 1997](https://doi.org/10.51347/jum.v1i1.4048); [Louf & Barthelemy 2014](https://doi.org/10.1098/rsif.2014.0924)).
 - **Construction:** Computed for the 1,521 traditional street centres (`Regional`, `Major Town`, `Town`, `Market Town`, `District`, and `Local Centres`). Ground-level street segments (with `highway=service` car-park lanes and parallel sidewalks removed) are polygonised via `shapely.ops.polygonize`. Sliver traffic islands (thickness $4A/P < 20\text{ m}$) are filtered out, and the median area ($\text{m}^2$) of blocks whose interior point falls within the 100 m core is returned.
-- **Interpretation:** Completely independent of centre polygon size ($\rho_{\text{area}} = -0.075$) and OSM sidewalk mapping ($\rho_{\text{sidewalk}} = +0.001$), with `0.07%` missingness across the 1,521 street centres. Historic and regional cores exhibit compact permeable blocks (`3,000–5,000` $\text{m}^2$; Cliff's $\delta = -0.449$ vs. District/Local Centres), whereas suburban local centres exhibit large superblocks (`> 14,000` $\text{m}^2$).
+- **Interpretation:** Completely independent of centre polygon size ($\rho_{\text{area}} = -0.075$) and OSM sidewalk mapping ($\rho_{\text{sidewalk}} = +0.001$), with `0.07%` missingness across the 1,521 street centres. Fine-grained centres exhibit compact permeable blocks (`3,000–5,000` $\text{m}^2$; Cliff's $\delta = -0.449$ vs. District/Local Centres), whereas linear suburban corridors exhibit large elongated blocks (`> 14,000` $\text{m}^2$).
 
 | Band | `RC_ID` | Retail Centre | Classification | Area ($\text{km}^2$) | `walk_block_median_area_m2` |
 |---|---:|---|---|---:|---:|
-| **Low (8th pct — Fine Compact Blocks)** | 635 | Cambridge | Town Centre | 0.120 | **3,223 $\text{m}^2$** |
-| **Median (50th pct)** | 724 | Main Street, Larne, Mid and East Antrim | District Centre | 0.268 | **7,330 $\text{m}^2$** |
-| **High (92nd pct — Large Coarse Blocks)** | 1182 | High Street, Brownhills, Walsall | Local Centre | 0.147 | **16,789 $\text{m}^2$** |
+| **Low (8th pct — Fine Compact Blocks)** | 852 | Bolton Street, Ramsbottom, Bury | District Centre | 0.096 | **3,277 $\text{m}^2$** |
+| **Median (50th pct)** | 842 | High Street, Blackheath, Sandwell | District Centre | 0.201 | **7,362 $\text{m}^2$** |
+| **High (92nd pct — Large Coarse Blocks)** | 313 | Morningside Road, Churchhill, Edinburgh | District Centre | 0.123 | **16,750 $\text{m}^2$** |
 
 ![Enclosed Urban Block Area Profiles](Output%20Data/Figures/profile_10_walk_block_median_area_m2.png)
 
@@ -245,13 +245,13 @@ Below we document each of the 11 indicators, including its theoretical basis, ma
 
 - **Concept:** Geometric alignment of street bearings versus multi-directional irregularity ([Boeing 2019](https://doi.org/10.1007/s41109-019-0189-1)).
 - **Construction:** Computed for the 1,521 traditional street centres on the car-park-cleaned street graph. Edge bearings (in both directions) are weighted by segment length into 36 compass bins of $10^\circ$, and Shannon entropy is normalised by $\ln(36) \in [0, 1]$.
-- **Interpretation:** Low entropy (`< 0.83`) identifies orthogonal gridiron layouts aligned along two perpendicular axes (e.g. Victorian terraced grids along Stockport Road, Manchester); high entropy (`> 0.96`) identifies radial or multi-directional street patterns (e.g. Camberwell, London). Restricting to the 1,521 street centres eliminates small-sample histogram bias (`0.00%` missing; within-tier $|\rho_{\text{area}}| = 0.142$).
+- **Interpretation:** Low entropy (`< 0.83`) identifies orthogonal gridiron layouts aligned along two perpendicular axes (e.g. Victorian terraced grids along Stockport Road, Manchester); high entropy (`> 0.96`) identifies radial or multi-directional street patterns (e.g. Llanelli, Carmarthenshire). Restricting to the 1,521 street centres eliminates small-sample histogram bias (`0.00%` missing; within-tier $|\rho_{\text{area}}| = 0.142$).
 
 | Band | `RC_ID` | Retail Centre | Classification | Area ($\text{km}^2$) | `orientation_entropy` |
 |---|---:|---|---|---:|---:|
 | **Low (8th pct — Orthogonal Grid)** | 934 | Stockport Road, Longsight, Manchester | District Centre | 0.121 | **0.815** |
-| **Median (50th pct)** | 652 | Aberdare, Rhondda Cynon Taf | Market Town | 0.102 | **0.925** |
-| **High (92nd pct — Multi-Directional)** | 519 | Camberwell, Southwark, London | District Centre | 0.156 | **0.970** |
+| **Median (50th pct)** | 617 | Bridport, Dorset | Market Town | 0.137 | **0.928** |
+| **High (92nd pct — Multi-Directional)** | 439 | Llanelli, Carmarthenshire | Market Town | 0.313 | **0.970** |
 
 ![Street Bearing Orientation Entropy Profiles](Output%20Data/Figures/profile_11_orientation_entropy.png)
 
