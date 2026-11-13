@@ -187,8 +187,8 @@ While fixed-distance metrics (such as a 400 m ring) provide valuable baseline mi
 
 To capture this functional reality, we incorporate per-centre network catchment polygons computed via Valhalla isochrones on the OpenStreetMap graph and tessellated using the Uber H3 discrete global grid (resolution 11, cell area $\approx 2,161\,\text{m}^2$). Travel times are calibrated against the GeoDS Retail Hierarchy classification (`Input Data/variable_dictionary_rc_catchment_durations.csv`):
 
-- **Walking Speed Assumption:** $80\text{ m/min} = 4.8\text{ km/h}$. Theoretical circular buffer area: $A_{\text{walk\_ideal}} = \pi \times (80 \times \text{walk\_time\_min})^2$. Directness ratio: $\text{walk\_reach} = \frac{A_{\text{walk\_isochrone\_exterior}}}{A_{\text{walk\_ideal}}}$.
-- **Driving Speed Assumption:** $500\text{ m/min} = 30\text{ km/h}$. Theoretical circular buffer area: $A_{\text{drive\_ideal}} = \pi \times (500 \times \text{drive\_time\_min})^2$. Directness ratio: $\text{drive\_reach} = \frac{A_{\text{drive\_isochrone\_exterior}}}{A_{\text{drive\_ideal}}}$.
+- **Walking Speed Assumption:** $80\,\mathrm{m/min} = 4.8\,\mathrm{km/h}$. Theoretical circular buffer area: $A_{\mathrm{ideal}} = \pi \times (80 \times t_{\mathrm{walk}})^2$. Directness ratio: $\mathrm{walk\_reach} = \frac{A_{\mathrm{exterior}}}{A_{\mathrm{ideal}}}$.
+- **Driving Speed Assumption:** $500\,\mathrm{m/min} = 30\,\mathrm{km/h}$. Theoretical circular buffer area: $A_{\mathrm{ideal}} = \pi \times (500 \times t_{\mathrm{drive}})^2$. Directness ratio: $\mathrm{drive\_reach} = \frac{A_{\mathrm{exterior}}}{A_{\mathrm{ideal}}}$.
 
 The resulting national benchmarks demonstrate how network reach and total catchment area scale across UK retail centre typologies:
 
@@ -229,7 +229,7 @@ The sections below set out the conceptual background, calculation, and practical
 Walkable catchment reach measures the spatial directness and permeability of the pedestrian network surrounding each retail centre across a realistic, hierarchy-calibrated walking journey time (5 to 15 minutes). Rather than applying a uniform Euclidean buffer or fixed 400 m ring across all centres regardless of scale, this indicator is computed from multi-directional Valhalla walking isochrone catchments (`Input Data/walk_catchments.gpkg`) aggregated via the H3 discrete global grid (resolution 11).
 
 The indicator is formulated as a network directness ratio:
-$$\text{walk\_reach} = \frac{\text{Area}(\text{Reachable Isochrone Exterior})}{\pi \times (80\text{ m/min} \times \text{walk\_time\_min})^2}$$
+$$\mathrm{walk\_reach} = \frac{\mathrm{Area}(\mathrm{Reachable\ Isochrone\ Exterior})}{\pi \times (80\,\mathrm{m/min} \times t_{\mathrm{walk}})^2}$$
 where $80\text{ m/min}$ represents standard UK pedestrian walking speed ($4.8\text{ km/h}$). The denominator calculates the theoretical maximum circular area reachable in that time, while the numerator measures the actual reachable land area outside the retail centre polygon (`walk_catchment_km2`). A score of `1.0` represents frictionless radial dispersion in all directions, while lower scores reflect physical barriers, railway severance, dual-carriageway crossing resistance, or cul-de-sac layouts that force pedestrian detours.
 
 Across the UK, the national median score is `0.70` (interquartile range `0.60` to `0.78`). For retail analysis, the metric clearly delineates permeable high streets from severed retail formats:
@@ -249,7 +249,7 @@ Across the UK, the national median score is `0.70` (interquartile range `0.60` t
 Motorised road catchment reach evaluates how effectively a retail centre is embedded within the vehicular road network across hierarchy-calibrated driving durations (5 to 20 minutes). Computed using Valhalla dynamic automobile routing isochrones (`Input Data/drive_catchments.gpkg`) at H3 resolution 11, the indicator quantifies how much of the surrounding territory is reachable by car compared to theoretical isotropic radial travel.
 
 The indicator is calculated as:
-$$\text{drive\_reach} = \frac{\text{Area}(\text{Reachable Isochrone Exterior})}{\pi \times (500\text{ m/min} \times \text{drive\_time\_min})^2}$$
+$$\mathrm{drive\_reach} = \frac{\mathrm{Area}(\mathrm{Reachable\ Isochrone\ Exterior})}{\pi \times (500\,\mathrm{m/min} \times t_{\mathrm{drive}})^2}$$
 where nominal driving speed is calibrated at $500\text{ m/min}$ ($30\text{ km/h}$).
 
 The national distribution captures a fundamental structural divergence across the urban hierarchy. In local centres, 5-minute drive reach medians are low (`0.30` to `0.39`) because stop-start local residential roads and urban speed limits restrict 5-minute outward expansion. Conversely, in major regional hubs, 15-20 minute drive reach medians rise to `0.62` to `0.81` because motorways, dual carriageways, and grade-separated bypasses unlock massive territorial reach:

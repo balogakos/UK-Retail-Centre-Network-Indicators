@@ -1,4 +1,4 @@
-﻿"""Generate publication figures for walk_reach and drive_reach catchment indicators.
+"""Generate publication figures for walk_reach and drive_reach catchment indicators.
 
 Outputs:
   - Output Data/Figures/profile_01_walk_reach.png
@@ -24,7 +24,7 @@ from shapely import STRtree
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CENTRES_PATH = REPO_ROOT / 'Input Data' / 'retailcentre_bounds_uk.gpkg'
-ROADS_PATH = REPO_ROOT / 'Input Data' / 'uk_roads_400m.parquet'
+ROADS_DIR = REPO_ROOT / 'Input Data' / 'exemplar_roads'
 WALK_PATH = REPO_ROOT / 'Input Data' / 'walk_catchments.gpkg'
 DRIVE_PATH = REPO_ROOT / 'Input Data' / 'drive_catchments.gpkg'
 CSV_PATH = REPO_ROOT / 'Output Data' / 'UK_Retail_Centre_Network_Indicators.csv'
@@ -85,9 +85,9 @@ def _add_polygon_patches(ax, geom, facecolor, edgecolor, linewidth=1.2, alpha=0.
         ax.add_collection(pc)
 
 
-def plot_catchment_panel(ax, centre_row, catchment_geom, roads_tree, roads_gdf,
+def plot_catchment_panel(ax, centre_row, catchment_geom, roads_gdf,
                          band_label, title_color, fill_col, edge_col,
-                         centre_fill, centre_edge):
+                         centre_fill, centre_edge, is_drive=False):
     ax.set_facecolor(PAGE_BG)
     c_geom = centre_row['geometry']
 
@@ -95,22 +95,37 @@ def plot_catchment_panel(ax, centre_row, catchment_geom, roads_tree, roads_gdf,
     cx, cy = (minx + maxx) / 2.0, (miny + maxy) / 2.0
     span = max(maxx - minx, maxy - miny)
     radius = span * 0.54 + 20.0
+    study_circle = shapely.Point(cx, cy).buffer(radius, quad_segs=48)
 
-    if roads_tree is not None and roads_gdf is not None:
-        study_circle = shapely.Point(cx, cy).buffer(radius, quad_segs=48)
-        cand_idx = roads_tree.query(study_circle, predicate='intersects')
-        if len(cand_idx) > 0:
-            cand_roads = roads_gdf.iloc[cand_idx].geometry.to_numpy()
-            clipped_roads = shapely.intersection(cand_roads, study_circle)
-            segs = _lines_to_segments(clipped_roads)
-            if segs:
-                ax.add_collection(LineCollection(segs, colors=NEUTRAL_ROAD, linewidths=0.6, alpha=0.75, zorder=2, rasterized=True))
+    # 1. Road networks
+    if roads_gdf is not None and len(roads_gdf) > 0:
+        cand_geoms = roads_gdf.geometry.to_numpy()
+        clipped = shapely.intersection(cand_geoms, study_circle)
+        valid_mask = ~shapely.is_empty(clipped)
+        clipped = clipped[valid_mask]
 
+        if len(clipped) > 0:
+            inside_mask = shapely.intersects(clipped, catchment_geom)
+
+            # Contextual roads outside catchment
+            bg_segs = _lines_to_segments(clipped[~inside_mask])
+            if bg_segs:
+                ax.add_collection(LineCollection(bg_segs, colors=NEUTRAL_ROAD, linewidths=0.65, alpha=0.75, zorder=2, rasterized=True))
+
+            # Reachable roads inside catchment
+            reach_segs = _lines_to_segments(clipped[inside_mask])
+            if reach_segs:
+                lw = 1.35 if not is_drive else 1.45
+                hi_col = '#22d3ee' if not is_drive else '#38bdf8'
+                ax.add_collection(LineCollection(reach_segs, colors=hi_col, linewidths=lw, alpha=0.96, zorder=4, rasterized=True))
+
+    # 2. Catchment polygon with translucent fill and crisp boundary
     _add_polygon_patches(ax, catchment_geom, facecolor=fill_col, edgecolor=edge_col,
-                         linewidth=1.6, alpha=0.38, zorder=4)
+                         linewidth=1.6, alpha=0.24, zorder=3)
 
+    # 3. Retail centre footprint
     _add_polygon_patches(ax, c_geom, facecolor=centre_fill, edgecolor=centre_edge,
-                         linewidth=1.3, alpha=0.90, zorder=6)
+                         linewidth=1.3, alpha=0.90, zorder=5)
 
     pad = radius * 0.03
     ax.set_xlim(cx - radius - pad, cx + radius + pad)
@@ -135,19 +150,18 @@ def plot_catchment_panel(ax, centre_row, catchment_geom, roads_tree, roads_gdf,
     )
 
 
-def generate_walk_figure(df, centres_gdf, walk_gdf, roads_tree, roads_gdf):
-    out_path_1 = FIG_DIR / 'profile_01_walk_reach.png'
-    out_path_2 = FIG_DIR / 'profile_01_walk_reach_400.png'
+def generate_walk_figure(df, centres_gdf, walk_gdf):
+    out_path = FIG_DIR / 'profile_01_walk_reach.png'
 
     exemplars = [
-        ('Low', 6019),
-        ('Median', 754),
-        ('High', 54)
+        ('Low', 6019, 'peel_walk.parquet'),
+        ('Median', 754, 'stony_stratford_walk.parquet'),
+        ('High', 54, 'bradford_walk.parquet')
     ]
 
     fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.6), dpi=220, facecolor=PAGE_BG)
 
-    for ax, (band_label, rcid) in zip(axes, exemplars):
+    for ax, (band_label, rcid, road_file) in zip(axes, exemplars):
         c_row = centres_gdf[centres_gdf['RC_ID'] == rcid].iloc[0].to_dict()
         df_row = df[df['RC_ID'] == rcid].iloc[0]
         c_row['val'] = float(df_row['walk_reach'])
@@ -157,23 +171,28 @@ def generate_walk_figure(df, centres_gdf, walk_gdf, roads_tree, roads_gdf):
 
         w_geom = walk_gdf[walk_gdf['RC_ID'] == rcid].geometry.iloc[0]
 
+        roads_path = ROADS_DIR / road_file
+        roads_gdf = gpd.read_parquet(roads_path) if roads_path.exists() else None
+
         plot_catchment_panel(
             ax=ax,
             centre_row=c_row,
             catchment_geom=w_geom,
-            roads_tree=roads_tree,
             roads_gdf=roads_gdf,
             band_label=band_label,
             title_color='#22d3ee',
             fill_col='#0284c7',
             edge_col='#22d3ee',
             centre_fill='#38bdf8',
-            centre_edge='#ffffff'
+            centre_edge='#ffffff',
+            is_drive=False
         )
 
     handles = [
         Patch(facecolor='#38bdf8', edgecolor='#ffffff', alpha=0.90, label='Retail centre footprint'),
-        Patch(facecolor='#0284c7', edgecolor='#22d3ee', alpha=0.45, label='Walkable network isochrone catchment'),
+        Patch(facecolor='#0284c7', edgecolor='#22d3ee', alpha=0.35, label='Walkable network isochrone'),
+        Line2D([0], [0], color='#22d3ee', lw=2.0, label='Reachable street network'),
+        Line2D([0], [0], color=NEUTRAL_ROAD, lw=1.2, label='Contextual street network'),
     ]
     fig.legend(
         handles=handles,
@@ -191,25 +210,23 @@ def generate_walk_figure(df, centres_gdf, walk_gdf, roads_tree, roads_gdf):
     )
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.13, top=0.82, wspace=0.06)
 
-    fig.savefig(out_path_1, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
-    fig.savefig(out_path_2, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
+    fig.savefig(out_path, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved walk profile: {out_path_1} and {out_path_2}')
+    print(f'Saved walk profile: {out_path}')
 
 
-def generate_drive_figure(df, centres_gdf, drive_gdf, roads_tree, roads_gdf):
-    out_path_1 = FIG_DIR / 'profile_02_drive_reach.png'
-    out_path_2 = FIG_DIR / 'profile_02_drive_reach_400.png'
+def generate_drive_figure(df, centres_gdf, drive_gdf):
+    out_path = FIG_DIR / 'profile_02_drive_reach.png'
 
     exemplars = [
-        ('Low', 6019),
-        ('Median', 183),
-        ('High', 139)
+        ('Low', 6019, 'peel_drive.parquet'),
+        ('Median', 183, 'derry_drive.parquet'),
+        ('High', 139, 'bristol_drive.parquet')
     ]
 
     fig, axes = plt.subplots(1, 3, figsize=(15.5, 5.6), dpi=220, facecolor=PAGE_BG)
 
-    for ax, (band_label, rcid) in zip(axes, exemplars):
+    for ax, (band_label, rcid, road_file) in zip(axes, exemplars):
         c_row = centres_gdf[centres_gdf['RC_ID'] == rcid].iloc[0].to_dict()
         df_row = df[df['RC_ID'] == rcid].iloc[0]
         c_row['val'] = float(df_row['drive_reach'])
@@ -219,23 +236,28 @@ def generate_drive_figure(df, centres_gdf, drive_gdf, roads_tree, roads_gdf):
 
         d_geom = drive_gdf[drive_gdf['RC_ID'] == rcid].geometry.iloc[0]
 
+        roads_path = ROADS_DIR / road_file
+        roads_gdf = gpd.read_parquet(roads_path) if roads_path.exists() else None
+
         plot_catchment_panel(
             ax=ax,
             centre_row=c_row,
             catchment_geom=d_geom,
-            roads_tree=roads_tree,
             roads_gdf=roads_gdf,
             band_label=band_label,
             title_color='#38bdf8',
             fill_col='#1e3a8a',
             edge_col='#38bdf8',
             centre_fill='#fb7185',
-            centre_edge='#ffffff'
+            centre_edge='#ffffff',
+            is_drive=True
         )
 
     handles = [
         Patch(facecolor='#fb7185', edgecolor='#ffffff', alpha=0.90, label='Retail centre footprint'),
-        Patch(facecolor='#1e3a8a', edgecolor='#38bdf8', alpha=0.45, label='Drivable network isochrone catchment'),
+        Patch(facecolor='#1e3a8a', edgecolor='#38bdf8', alpha=0.35, label='Drivable network isochrone'),
+        Line2D([0], [0], color='#38bdf8', lw=2.0, label='Reachable road network'),
+        Line2D([0], [0], color=NEUTRAL_ROAD, lw=1.2, label='Contextual road network'),
     ]
     fig.legend(
         handles=handles,
@@ -253,10 +275,9 @@ def generate_drive_figure(df, centres_gdf, drive_gdf, roads_tree, roads_gdf):
     )
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.13, top=0.82, wspace=0.06)
 
-    fig.savefig(out_path_1, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
-    fig.savefig(out_path_2, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
+    fig.savefig(out_path, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved drive profile: {out_path_1} and {out_path_2}')
+    print(f'Saved drive profile: {out_path}')
 
 
 def update_examples_csv(df):
@@ -351,12 +372,6 @@ def main():
     centres = gpd.read_file(CENTRES_PATH)[['RC_ID', 'RC_Name', 'Classification', 'geometry']].to_crs(27700)
     centres['RC_ID'] = centres['RC_ID'].astype(int)
 
-    roads = None
-    roads_tree = None
-    if ROADS_PATH.exists():
-        roads = gpd.read_parquet(ROADS_PATH)
-        roads_tree = STRtree(roads.geometry.to_numpy())
-
     print('Loading walk catchments...')
     walk = gpd.read_file(WALK_PATH).to_crs(27700)
     walk['RC_ID'] = walk['RC_ID'].astype(int)
@@ -365,11 +380,11 @@ def main():
     drive = gpd.read_file(DRIVE_PATH).to_crs(27700)
     drive['RC_ID'] = drive['RC_ID'].astype(int)
 
-    print('Generating walk catchment figure...')
-    generate_walk_figure(df, centres, walk, roads_tree, roads)
+    print('Generating walk catchment figure with road networks...')
+    generate_walk_figure(df, centres, walk)
 
-    print('Generating drive catchment figure...')
-    generate_drive_figure(df, centres, drive, roads_tree, roads)
+    print('Generating drive catchment figure with road networks...')
+    generate_drive_figure(df, centres, drive)
 
     print('Updating examples lookup CSV...')
     update_examples_csv(df)
