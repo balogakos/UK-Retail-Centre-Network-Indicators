@@ -1,10 +1,10 @@
 indicator,profile_band,RC_ID,RC_Name,Classification,Region_NM,Area_km2,value,formatted_value,figure_file
-walk_reach_400,Low,6019,Peel Retail Park; Sunderland (North East; England),Small Retail Park,North East,0.091,0.4592401642340614,0.46,Output Data/Figures/profile_01_walk_reach_400.png
-walk_reach_400,Median,754,High Street; Stony Stratford; Milton Keynes (South East; England),District Centre,South East,0.108,0.6674273030334648,0.67,Output Data/Figures/profile_01_walk_reach_400.png
-walk_reach_400,High,54,Bradford; Bradford (Yorkshire and The Humber; England),Major Town Centre,Yorkshire and The Humber,0.453,0.7807506381514352,0.78,Output Data/Figures/profile_01_walk_reach_400.png
-drive_reach_400,Low,1863,Rushden Lakes Shopping Centre; North Northamptonshire (East Midlands; England),Large Retail Park,East Midlands,0.284,0.4488959363878307,0.45,Output Data/Figures/profile_02_drive_reach_400.png
-drive_reach_400,Median,183,Derry/Londonderry; Derry City and Strabane (Northern Ireland),Major Town Centre,Northern Ireland,0.271,0.6684135579919014,0.67,Output Data/Figures/profile_02_drive_reach_400.png
-drive_reach_400,High,59,Tooting Graveney; Wandsworth (London; England),Town Centre,London,0.483,0.7885683976951707,0.79,Output Data/Figures/profile_02_drive_reach_400.png
+walk_reach,Low,6019,Peel Retail Park; Sunderland (North East; England),Small Retail Park,North East,0.091,0.4829680418645313,0.48,Output Data/Figures/profile_01_walk_reach.png
+walk_reach,Median,754,High Street; Stony Stratford; Milton Keynes (South East; England),District Centre,South East,0.108,0.6696359258182726,0.67,Output Data/Figures/profile_01_walk_reach.png
+walk_reach,High,54,Bradford; Bradford (Yorkshire and The Humber; England),Major Town Centre,Yorkshire and The Humber,0.453,0.8434492568159973,0.84,Output Data/Figures/profile_01_walk_reach.png
+drive_reach,Low,6019,Peel Retail Park; Sunderland (North East; England),Small Retail Park,North East,0.091,0.3649022212389924,0.36,Output Data/Figures/profile_02_drive_reach.png
+drive_reach,Median,183,Derry/Londonderry; Derry City and Strabane (Northern Ireland),Major Town Centre,Northern Ireland,0.271,0.6273297064397209,0.63,Output Data/Figures/profile_02_drive_reach.png
+drive_reach,High,139,Old City (Bristol City Centre); City of Bristol (South West; England),Regional Centre,South West,0.177,0.9236779189164496,0.92,Output Data/Figures/profile_02_drive_reach.png
 arterial_share,Low,513,Coventry Road; Sparkbrook; Birmingham (West Midlands; England),District Centre,West Midlands,0.21,0.068501875099959,0.07,Output Data/Figures/profile_03_arterial_share.png
 arterial_share,Median,646,Galashiels; Scottish Borders (Scotland),Town Centre,Scotland,0.23,0.2964438686863399,0.30,Output Data/Figures/profile_03_arterial_share.png
 arterial_share,High,4809,Parc Pemberton; Carmarthenshire (Wales),Small Retail Park,Wales,0.155,0.5688025398247801,0.57,Output Data/Figures/profile_03_arterial_share.png
@@ -32,3 +32,9 @@ walk_block_median_area_m2,High,730,Leytonstone; Waltham Forest (London; England)
 orientation_entropy,Low,570,High Street; New Malden; Kingston upon Thames (London; England),District Centre,London,0.13,0.8180969135082394,0.818,Output Data/Figures/profile_11_orientation_entropy.png
 orientation_entropy,Median,1060,High Street; Potters Bar; Hertsmere (East of England; England),Local Centre,East of England,0.146,0.9296225684929365,0.930,Output Data/Figures/profile_11_orientation_entropy.png
 orientation_entropy,High,1030,King Street (Aberdeen City Centre); Aberdeen City (Scotland),Major Town Centre,Scotland,0.169,0.9719793591556448,0.972,Output Data/Figures/profile_11_orientation_entropy.png
+walk_reach_400,Low,6019,Peel Retail Park; Sunderland (North East; England),Small Retail Park,North East,0.091,0.4592401642340614,0.46,Output Data/Figures/profile_01_walk_reach_400.png
+walk_reach_400,Median,754,High Street; Stony Stratford; Milton Keynes (South East; England),District Centre,South East,0.108,0.6674273030334648,0.67,Output Data/Figures/profile_01_walk_reach_400.png
+walk_reach_400,High,54,Bradford; Bradford (Yorkshire and The Humber; England),Major Town Centre,Yorkshire and The Humber,0.453,0.7807506381514352,0.78,Output Data/Figures/profile_01_walk_reach_400.png
+drive_reach_400,Low,1863,Rushden Lakes Shopping Centre; North Northamptonshire (East Midlands; England),Large Retail Park,East Midlands,0.284,0.4488959363878307,0.45,Output Data/Figures/profile_02_drive_reach_400.png
+drive_reach_400,Median,183,Derry/Londonderry; Derry City and Strabane (Northern Ireland),Major Town Centre,Northern Ireland,0.271,0.6684135579919014,0.67,Output Data/Figures/profile_02_drive_reach_400.png
+drive_reach_400,High,59,Tooting Graveney; Wandsworth (London; England),Town Centre,London,0.483,0.7885683976951707,0.79,Output Data/Figures/profile_02_drive_reach_400.png

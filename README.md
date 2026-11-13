@@ -10,7 +10,7 @@ The indicators are built for the UK release of the Geographic Data Service ([Geo
 Because raw OpenStreetMap street graphs are sensitive to local pavement-mapping habits, polygon size, split junctions, and off-street car-park circulation, the indicators are split into two groups:
 
 1. **Universal Core Set (9 Indicators for all 9,623 Retail Centres):**
-   - **External Network Embeddedness:** `walk_reach_400`, `drive_reach_400`
+   - **External Network Reach & Catchment Embeddedness:** `walk_reach`, `drive_reach` (catchment directness ratios computed from Valhalla network isochrones calibrated by retail hierarchy; accompanying area metrics: `walk_catchment_km2`, `drive_catchment_km2`, and trip duration parameters `walk_time_min`, `drive_time_min`; baseline fixed-distance controls `walk_reach_400` and `drive_reach_400` preserved)
    - **Car Dominance and Servicing:** `arterial_share`, `service_share`
    - **Dedicated Pedestrian Ways:** `carfree_share`
    - **Street Grain and Loop Structure:** `walk_median_edge_len_m`, `walk_meshedness`
@@ -38,12 +38,14 @@ All scripts use repository-relative paths and compute the dataset from scratch:
 
 - [`Source Code/Helper_Functions.py`](Source%20Code/Helper_Functions.py): Graph construction, parallel sidewalk detection, topology-aware junction consolidation, and indicator calculation functions.
 - [`Analysis Code/01_Extract_OSM_Networks.py`](Analysis%20Code/01_Extract_OSM_Networks.py): Extracts highway ways within 400 m of [`Input Data/retailcentre_bounds_uk.gpkg`](Input%20Data/retailcentre_bounds_uk.gpkg) from `Input Data/united-kingdom-latest.osm.pbf` into `Input Data/uk_roads_400m.parquet`, preserving `footway`, `service`, `access`, `foot`, `motor_vehicle`, `oneway`, `bridge`, `tunnel`, and `layer` tags.
-- [`Analysis Code/02_Calculate_Network_Indicators.py`](Analysis%20Code/02_Calculate_Network_Indicators.py): Computes all 11 indicators and `sidewalk_mapped_share` directly from the retail centre boundaries and extracted road network.
+- [`Analysis Code/02_Calculate_Network_Indicators.py`](Analysis%20Code/02_Calculate_Network_Indicators.py): Computes the original 11 network indicators and `sidewalk_mapped_share` directly from the retail centre boundaries and extracted road network.
+- [`Analysis Code/02_Calculate_Network_Indicators_Catchments.py`](Analysis%20Code/02_Calculate_Network_Indicators_Catchments.py): Computes the hierarchy-calibrated catchment directness ratios (`walk_reach`, `drive_reach`), actual reachable areas (`walk_catchment_km2`, `drive_catchment_km2`), and threshold durations from Valhalla isochrone catchments across all 9,623 centres.
 - [`Analysis Code/03_Validate_Network_Indicators.py`](Analysis%20Code/03_Validate_Network_Indicators.py): Generates [`Validation_Scorecard.csv`](Output%20Data/Validation_Scorecard.csv) and the stratified perturbation sensitivity table [`Validation_Robustness.csv`](Output%20Data/Validation_Robustness.csv).
-- [`Analysis Code/04_Generate_Indicator_Profiles.py`](Analysis%20Code/04_Generate_Indicator_Profiles.py): Produces the national overview figure [`uk_retail_centre_indicator_popouts.png`](Output%20Data/Figures/uk_retail_centre_indicator_popouts.png), the methodological construction figure [`visual_qa_sidewalk_consolidation.png`](Output%20Data/Figures/visual_qa_sidewalk_consolidation.png), the 11 distribution profile figures [`profile_01_*.png` to `profile_11_*.png`](Output%20Data/Figures/), and [`Indicator_Profile_Examples.csv`](Output%20Data/Indicator_Profile_Examples.csv).
+- [`Analysis Code/04_Generate_Indicator_Profiles.py`](Analysis%20Code/04_Generate_Indicator_Profiles.py): Produces the national overview figure [`uk_retail_centre_indicator_popouts.png`](Output%20Data/Figures/uk_retail_centre_indicator_popouts.png), the methodological construction figure [`visual_qa_sidewalk_consolidation.png`](Output%20Data/Figures/visual_qa_sidewalk_consolidation.png), and the baseline distribution profile figures.
 - [`Analysis Code/05_Create_Editorial_Figures.py`](Analysis%20Code/05_Create_Editorial_Figures.py): Exports high-resolution dark-mode publication figures for the GeoDS retail centre morphology data story.
 - [`Analysis Code/06_Export_Explorer_Data.py`](Analysis%20Code/06_Export_Explorer_Data.py): Compiles optimized, lightweight JSON structures for the interactive web map, radar charts, and comparative benchmarks.
 - [`Analysis Code/07_Fill_Data_in_Brief_Template.py`](Analysis%20Code/07_Fill_Data_in_Brief_Template.py): Automatically populates the Elsevier Data in Brief manuscript template with complete data specifications, value bullets, and methodology.
+- [`Analysis Code/09_Generate_Catchment_Profile_Figures.py`](Analysis%20Code/09_Generate_Catchment_Profile_Figures.py): Renders high-resolution publication figures [`profile_01_walk_reach.png`](Output%20Data/Figures/profile_01_walk_reach.png) and [`profile_02_drive_reach.png`](Output%20Data/Figures/profile_02_drive_reach.png) showing low, median, and high exemplar centres against their actual network isochrone polygons.
 
 ### 1.3 Interactive Web Map and Dual Comparator
 
@@ -179,14 +181,39 @@ Rank stability between baseline indicator values and each perturbed variant is q
 - **Moderate Buffer Sensitivity for Internal Subgraph Metrics ($\min \rho = 0.841 \text{ to } 0.894$):** Indicators derived from the internal street-mesh subgraph (`walk_meshedness` $\rho = 0.841$, `walk_block_median_area_m2` $\rho = 0.849$, `walk_sightline_continuity` $\rho = 0.859$, `walk_median_edge_len_m` $\rho = 0.875$) exhibit moderate sensitivity when contracting the readout buffer from 100 m to 50 m. In compact centres, a 50 m buffer occasionally clips perimeter blocks, altering internal planar face counts. When expanding to 150 m, stability rebounds to $\rho \ge 0.893 \text{ to } 0.967$.
 - **Empirical Justification of Sidewalk Filtering:** Retaining raw OpenStreetMap pavements (`keep_sidewalks`) causes substantial rank distortion in `carfree_share` ($\rho = 0.793$) and `walk_meshedness` ($\rho = 0.780$). Without directional filtering, volunteer-mapped roadside pavements create spurious micro-circuits along vehicular roads, falsely inflating loop counts and misattributing standard sidewalks as pedestrianized streets. This empirical degradation directly demonstrates why bearing-aligned sidewalk removal is essential.
 
-### 2.5 Interpretation Guidelines and Analytical Caveats
+### 2.5 Hierarchy-Calibrated Catchment Isochrones and Benchmark Medians
+
+While fixed-distance metrics (such as a 400 m ring) provide valuable baseline micro-neighbourhood controls, real-world retail accessibility varies fundamentally by the position of a centre within the urban hierarchy: shoppers willingly walk 15 minutes to a Regional Centre or Major Town Centre, but only 5 minutes to a convenience Local Centre; similarly, car catchments range from a 5-minute local trip to a 20-minute regional shopping expedition.
+
+To capture this functional reality, we incorporate per-centre network catchment polygons computed via Valhalla isochrones on the OpenStreetMap graph and tessellated using the Uber H3 discrete global grid (resolution 11, cell area $\approx 2,161\,\text{m}^2$). Travel times are calibrated against the GeoDS Retail Hierarchy classification (`Input Data/variable_dictionary_rc_catchment_durations.csv`):
+
+- **Walking Speed Assumption:** $80\text{ m/min} = 4.8\text{ km/h}$. Theoretical circular buffer area: $A_{\text{walk\_ideal}} = \pi \times (80 \times \text{walk\_time\_min})^2$. Directness ratio: $\text{walk\_reach} = \frac{A_{\text{walk\_isochrone\_exterior}}}{A_{\text{walk\_ideal}}}$.
+- **Driving Speed Assumption:** $500\text{ m/min} = 30\text{ km/h}$. Theoretical circular buffer area: $A_{\text{drive\_ideal}} = \pi \times (500 \times \text{drive\_time\_min})^2$. Directness ratio: $\text{drive\_reach} = \frac{A_{\text{drive\_isochrone\_exterior}}}{A_{\text{drive\_ideal}}}$.
+
+The resulting national benchmarks demonstrate how network reach and total catchment area scale across UK retail centre typologies:
+
+| Retail Classification | Walk Duration | Median Walk Reach | Median Walk Catchment Area | Drive Duration | Median Drive Reach | Median Drive Catchment Area |
+|---|---:|---:|---:|---:|---:|---:|
+| Regional Centre | 15 min | 0.793 | 5.83 km² | 20 min | 0.683 | 238.86 km² |
+| Major Town Centre | 15 min | 0.773 | 6.45 km² | 15 min | 0.616 | 122.20 km² |
+| Town Centre | 15 min | 0.724 | 5.39 km² | 15 min | 0.634 | 122.40 km² |
+| District Centre | 5 min | 0.783 | 1.21 km² | 5 min | 0.390 | 10.00 km² |
+| Market Town | 5 min | 0.717 | 1.04 km² | 5 min | 0.393 | 9.62 km² |
+| Local Centre | 5 min | 0.742 | 0.90 km² | 5 min | 0.361 | 8.46 km² |
+| Small Local Centre | 5 min | 0.672 | 0.52 km² | 5 min | 0.305 | 6.49 km² |
+| Large Retail Park | 10 min | 0.634 | 2.26 km² | 15 min | 0.605 | 113.72 km² |
+| Small Retail Park | 10 min | 0.613 | 1.78 km² | 10 min | 0.454 | 37.89 km² |
+| Large Shopping Centre | 15 min | 0.577 | 3.93 km² | 20 min | 0.808 | 265.75 km² |
+| Small Shopping Centre | 10 min | 0.590 | 1.68 km² | 15 min | 0.568 | 107.75 km² |
+
+### 2.6 Interpretation Guidelines and Analytical Caveats
 
 Researchers and policy analysts utilizing the indicators should incorporate these operational guidelines into their analytical designs:
 
 1. **Physical Network Capacity vs. Observed Commercial Outcomes:** The indicators quantify physical street-network geometry, spatial topology, and accessibility capacity. They do not directly measure pedestrian footfall volumes, till receipts, retail sales turnover, shop vacancy rates, or shopper dwell times. They provide the objective morphological substrate upon which behavioural and commercial activity takes place.
-2. **Controlling for Centre Scale in Statistical Modeling:** While compositional shares (`arterial_share`, `service_share`, `carfree_share`) and accessibility reach (`walk_reach_400`, `drive_reach_400`) are size-invariant, researchers including `walk_meshedness` or `orientation_entropy` in regression models should control for $\log(\text{Area})$ or include retail classification tier fixed effects.
+2. **Controlling for Centre Scale in Statistical Modeling:** While compositional shares (`arterial_share`, `service_share`, `carfree_share`) and accessibility reach (`walk_reach`, `drive_reach`) are size-invariant, researchers including `walk_meshedness` or `orientation_entropy` in regression models should control for $\log(\text{Area})$ or include retail classification tier fixed effects.
 3. **Descriptive Role of Axial Sightline Continuity:** `walk_sightline_continuity` measures street rectilinear continuity and axial alignment. It exhibits virtually no correlation with centre tier ($\delta = -0.014$), meaning both small market villages and major regional metropolises can possess straight or curved high streets. It should be used as a descriptive morphology descriptor rather than a hierarchical sorting variable.
-4. **Structural Road-Network Accessibility:** `drive_reach_400` is computed on an undirected planar road network. It captures physical, geometric road connectivity and spatial proximity, not legal turn prohibitions, traffic signal delays, or one-way street navigation.
+4. **Structural Road-Network Accessibility:** `drive_reach` is computed using dynamic network routing. It captures physical and topological route connectivity and travel time capacity across the hierarchy-calibrated catchment.
 5. **Structural Missingness in Street-Grid Indicators:** Do not impute values for `walk_block_median_area_m2` or `orientation_entropy` for `Small Local Centres` or `Retail Parks`. The missing values are structurally intentional: these retail formats do not possess an enclosed urban street block structure.
 
 ----
@@ -197,23 +224,43 @@ The sections below set out the conceptual background, calculation, and practical
 
 ---
 
-### 3.1 Walkable Neighbourhood Reach (`walk_reach_400`)
+### 3.1 Walkable Catchment Reach (`walk_reach`)
 
-Walkable neighbourhood reach measures how well a retail centre is connected on foot to its surrounding residential and mixed-use catchment. Drawing on the concept of metric reach and network accessibility ([Hillier 1996](https://discovery.ucl.ac.uk/id/eprint/3881/); [Sevtsuk & Mekonnen 2012](https://doi.org/10.3166/rig.22.287-305)), we run a multi-source Dijkstra shortest-path search outward from all walkable nodes within 30 m of the retail centre boundary. To prevent the indicator from scaling mechanically with the internal size of the retail centre, the denominator is restricted strictly to the exterior 0 to 400 m ring outside the polygon. The indicator reports the share of walkable street length in that exterior ring that can be reached within a 400 m walk from the centre perimeter.
+Walkable catchment reach measures the spatial directness and permeability of the pedestrian network surrounding each retail centre across a realistic, hierarchy-calibrated walking journey time (5 to 15 minutes). Rather than applying a uniform Euclidean buffer or fixed 400 m ring across all centres regardless of scale, this indicator is computed from multi-directional Valhalla walking isochrone catchments (`Input Data/walk_catchments.gpkg`) aggregated via the H3 discrete global grid (resolution 11).
 
-Across the UK, the median score is `0.63` (interquartile range `0.55` to `0.70`), and the metric is almost invariant to buffer and consolidation perturbations ($\min \rho = 0.994$). For retail centres, high values (`0.75` to `0.85`, such as Bradford at `0.78`) identify high streets and town centres that are stitched into surrounding residential streets across their entire perimeter, enabling short walk-in shopping trips from all directions. Low values (`< 0.50`, such as Peel Retail Park in Sunderland at `0.46`) identify isolated retail enclaves cut off from neighbouring streets by railway lines, rivers, or fenced arterial perimeters, resulting in a strong separation between Retail Parks and High Streets (Cliff's $\delta = -0.687$).
+The indicator is formulated as a network directness ratio:
+$$\text{walk\_reach} = \frac{\text{Area}(\text{Reachable Isochrone Exterior})}{\pi \times (80\text{ m/min} \times \text{walk\_time\_min})^2}$$
+where $80\text{ m/min}$ represents standard UK pedestrian walking speed ($4.8\text{ km/h}$). The denominator calculates the theoretical maximum circular area reachable in that time, while the numerator measures the actual reachable land area outside the retail centre polygon (`walk_catchment_km2`). A score of `1.0` represents frictionless radial dispersion in all directions, while lower scores reflect physical barriers, railway severance, dual-carriageway crossing resistance, or cul-de-sac layouts that force pedestrian detours.
 
-![Walkable Neighbourhood Reach Profiles](Output%20Data/Figures/profile_01_walk_reach_400.png)
+Across the UK, the national median score is `0.70` (interquartile range `0.60` to `0.78`). For retail analysis, the metric clearly delineates permeable high streets from severed retail formats:
+
+- **High Walk Reach (e.g. Bradford at `0.84`, 15 min, $7.84\text{ km}^2$; Tooting Graveney at `0.86`, 15 min, $10.80\text{ km}^2$):** Traditional high-density urban centres embedded within continuous, highly permeable street grids. Pedestrians can walk outwards in all directions with minimal circuitousness, allowing high street shops to draw footfall evenly from surrounding residential neighbourhoods.
+- **Median Walk Reach (e.g. High Street, Stony Stratford at `0.67`, 5 min, $0.95\text{ km}^2$):** Historic linear district centres and market towns where movement is balanced but partially channelled along a primary corridor with moderate cross-street permeability.
+- **Low Walk Reach (e.g. Peel Retail Park in Sunderland at `0.48`, 10 min, $1.56\text{ km}^2$):** Isolated commercial enclaves bounded by rail lines, rivers, or arterial ring roads, where pedestrians face major physical barriers and can reach less than half the area theoretically accessible in a 10-minute walk.
+
+*(Note: Baseline fixed-distance controls are preserved in `walk_reach_400` for backwards compatibility).*
+
+![Walkable Catchment Reach Profiles](Output%20Data/Figures/profile_01_walk_reach.png)
 
 ---
 
-### 3.2 Motorised Road-Network Embeddedness (`drive_reach_400`)
+### 3.2 Motorised Road Catchment Reach (`drive_reach`)
 
-Motorised road-network embeddedness applies the same exterior-ring accessibility formulation ([Sevtsuk & Mekonnen 2012](https://doi.org/10.3166/rig.22.287-305)) to the consolidated public motorised road network (`DRIVE_CLASSES` consolidated at 10 m). Starting from all drivable road nodes within 50 m of the retail centre boundary, a multi-source Dijkstra search measures the proportion of public road length in the exterior 0 to 400 m catchment ring reachable within 400 m along the road graph. Because planar junction consolidation merges undirected road centrelines without modelling turn prohibitions or one-way restrictions, this indicator should be read as structural road-network embeddedness rather than legal turn-by-turn driving reach.
+Motorised road catchment reach evaluates how effectively a retail centre is embedded within the vehicular road network across hierarchy-calibrated driving durations (5 to 20 minutes). Computed using Valhalla dynamic automobile routing isochrones (`Input Data/drive_catchments.gpkg`) at H3 resolution 11, the indicator quantifies how much of the surrounding territory is reachable by car compared to theoretical isotropic radial travel.
 
-The national median is `0.63` (IQR `0.54` to `0.71`), with high rank stability across geometric perturbations ($\min \rho = 0.998$). For a retail centre, a high score (such as Tooting Graveney in London at `0.79`) indicates a centre embedded in a continuous urban street grid where buses, deliveries, and local traffic can approach along dozens of intersecting streets. A low score (such as Rushden Lakes Shopping Centre at `0.45`) reflects an out-of-town development connected to the surrounding highway network through a single roundabout or slip road, where most roads in the surrounding 400 m ring cannot be reached without a long detour (Cliff's $\delta = -0.590$ comparing Retail Parks with High Streets).
+The indicator is calculated as:
+$$\text{drive\_reach} = \frac{\text{Area}(\text{Reachable Isochrone Exterior})}{\pi \times (500\text{ m/min} \times \text{drive\_time\_min})^2}$$
+where nominal driving speed is calibrated at $500\text{ m/min}$ ($30\text{ km/h}$).
 
-![Motorised Road-Network Embeddedness Profiles](Output%20Data/Figures/profile_02_drive_reach_400.png)
+The national distribution captures a fundamental structural divergence across the urban hierarchy. In local centres, 5-minute drive reach medians are low (`0.30` to `0.39`) because stop-start local residential roads and urban speed limits restrict 5-minute outward expansion. Conversely, in major regional hubs, 15–20 minute drive reach medians rise to `0.62` to `0.81` because motorways, dual carriageways, and grade-separated bypasses unlock massive territorial reach:
+
+- **High Drive Reach (e.g. Old City, Bristol at `0.92`, 20 min, $305.5\text{ km}^2$; Rushden Lakes at `0.73`, 15 min, $142.5\text{ km}^2$):** Major regional retail centres and strategic out-of-town complexes connected directly to high-speed arterial and motorway networks (such as Bristol's M32, M4, and M5 corridors), enabling vehicles to access hundreds of square kilometres of regional catchment within 20 minutes.
+- **Median Drive Reach (e.g. Derry/Londonderry at `0.63`, 15 min, $123.4\text{ km}^2$):** Well-integrated regional town centres with balanced road connectivity across multiple corridors, structured naturally around geographic barriers such as the River Foyle.
+- **Low Drive Reach (e.g. Peel Retail Park in Sunderland at `0.36`, 10 min, $30.9\text{ km}^2$; Stony Stratford at `0.28`, 5 min, $6.8\text{ km}^2$):** Centres where local street congestion, dead ends, or bottlenecked access roads significantly impede vehicle dispersion within the initial 5 to 10 minutes of travel.
+
+*(Note: Baseline fixed-distance controls are preserved in `drive_reach_400` for backwards compatibility).*
+
+![Motorised Road Catchment Reach Profiles](Output%20Data/Figures/profile_02_drive_reach.png)
 
 ---
 
