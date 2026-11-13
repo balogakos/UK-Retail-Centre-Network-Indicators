@@ -34,7 +34,7 @@ EXAMPLES_CSV = REPO_ROOT / 'Output Data' / 'Indicator_Profile_Examples.csv'
 PAGE_BG = '#0d1117'
 TEXT_LIGHT = '#f0f6fc'
 TEXT_MUTED = '#8b949e'
-NEUTRAL_ROAD = '#21262d'
+NEUTRAL_ROAD = '#2e353f'
 FONT_FAMILY = 'Times New Roman'
 
 
@@ -151,7 +151,7 @@ def plot_catchment_panel(ax, centre_row, catchment_geom, roads_gdf,
 
 
 def generate_walk_figure(df, centres_gdf, walk_gdf):
-    out_path = FIG_DIR / 'profile_01_walk_reach.png'
+    out_path = FIG_DIR / 'profile_01_walk_reach_catchment.png'
 
     exemplars = [
         ('Low', 6019, 'peel_walk.parquet'),
@@ -211,12 +211,13 @@ def generate_walk_figure(df, centres_gdf, walk_gdf):
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.13, top=0.82, wspace=0.06)
 
     fig.savefig(out_path, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
+    fig.savefig(FIG_DIR / 'profile_01_walk_reach.png', dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
     plt.close(fig)
     print(f'Saved walk profile: {out_path}')
 
 
 def generate_drive_figure(df, centres_gdf, drive_gdf):
-    out_path = FIG_DIR / 'profile_02_drive_reach.png'
+    out_path = FIG_DIR / 'profile_02_drive_reach_catchment.png'
 
     exemplars = [
         ('Low', 6019, 'peel_drive.parquet'),
@@ -276,6 +277,7 @@ def generate_drive_figure(df, centres_gdf, drive_gdf):
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.13, top=0.82, wspace=0.06)
 
     fig.savefig(out_path, dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
+    fig.savefig(FIG_DIR / 'profile_02_drive_reach.png', dpi=220, facecolor=PAGE_BG, bbox_inches='tight')
     plt.close(fig)
     print(f'Saved drive profile: {out_path}')
 
@@ -294,7 +296,7 @@ def update_examples_csv(df):
             'Area_km2': 0.091,
             'value': float(df[df['RC_ID'] == 6019]['walk_reach'].iloc[0]),
             'formatted_value': f"{df[df['RC_ID'] == 6019]['walk_reach'].iloc[0]:.2f}",
-            'figure_file': 'Output Data/Figures/profile_01_walk_reach.png'
+            'figure_file': 'Output Data/Figures/profile_01_walk_reach_catchment.png'
         },
         {
             'indicator': 'walk_reach',
@@ -306,7 +308,7 @@ def update_examples_csv(df):
             'Area_km2': 0.108,
             'value': float(df[df['RC_ID'] == 754]['walk_reach'].iloc[0]),
             'formatted_value': f"{df[df['RC_ID'] == 754]['walk_reach'].iloc[0]:.2f}",
-            'figure_file': 'Output Data/Figures/profile_01_walk_reach.png'
+            'figure_file': 'Output Data/Figures/profile_01_walk_reach_catchment.png'
         },
         {
             'indicator': 'walk_reach',
@@ -318,7 +320,7 @@ def update_examples_csv(df):
             'Area_km2': 0.453,
             'value': float(df[df['RC_ID'] == 54]['walk_reach'].iloc[0]),
             'formatted_value': f"{df[df['RC_ID'] == 54]['walk_reach'].iloc[0]:.2f}",
-            'figure_file': 'Output Data/Figures/profile_01_walk_reach.png'
+            'figure_file': 'Output Data/Figures/profile_01_walk_reach_catchment.png'
         },
         {
             'indicator': 'drive_reach',
@@ -330,7 +332,7 @@ def update_examples_csv(df):
             'Area_km2': 0.091,
             'value': float(df[df['RC_ID'] == 6019]['drive_reach'].iloc[0]),
             'formatted_value': f"{df[df['RC_ID'] == 6019]['drive_reach'].iloc[0]:.2f}",
-            'figure_file': 'Output Data/Figures/profile_02_drive_reach.png'
+            'figure_file': 'Output Data/Figures/profile_02_drive_reach_catchment.png'
         },
         {
             'indicator': 'drive_reach',
@@ -342,7 +344,7 @@ def update_examples_csv(df):
             'Area_km2': 0.271,
             'value': float(df[df['RC_ID'] == 183]['drive_reach'].iloc[0]),
             'formatted_value': f"{df[df['RC_ID'] == 183]['drive_reach'].iloc[0]:.2f}",
-            'figure_file': 'Output Data/Figures/profile_02_drive_reach.png'
+            'figure_file': 'Output Data/Figures/profile_02_drive_reach_catchment.png'
         },
         {
             'indicator': 'drive_reach',
@@ -354,7 +356,7 @@ def update_examples_csv(df):
             'Area_km2': 0.177,
             'value': float(df[df['RC_ID'] == 139]['drive_reach'].iloc[0]),
             'formatted_value': f"{df[df['RC_ID'] == 139]['drive_reach'].iloc[0]:.2f}",
-            'figure_file': 'Output Data/Figures/profile_02_drive_reach.png'
+            'figure_file': 'Output Data/Figures/profile_02_drive_reach_catchment.png'
         },
     ]
 

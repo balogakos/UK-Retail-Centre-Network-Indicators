@@ -240,7 +240,7 @@ Across the UK, the national median score is `0.70` (interquartile range `0.60` t
 
 *(Note: Baseline fixed-distance controls are preserved in `walk_reach_400` for backwards compatibility).*
 
-![Walkable Catchment Reach Profiles](Output%20Data/Figures/profile_01_walk_reach.png)
+![Walkable Catchment Reach Profiles](Output%20Data/Figures/profile_01_walk_reach_catchment.png)
 
 ---
 
@@ -260,7 +260,7 @@ The national distribution captures a fundamental structural divergence across th
 
 *(Note: Baseline fixed-distance controls are preserved in `drive_reach_400` for backwards compatibility).*
 
-![Motorised Road Catchment Reach Profiles](Output%20Data/Figures/profile_02_drive_reach.png)
+![Motorised Road Catchment Reach Profiles](Output%20Data/Figures/profile_02_drive_reach_catchment.png)
 
 ---
 
