@@ -17,3 +17,9 @@ This directory holds the spatial input datasets and provenance metadata required
 - **Source:** Geofabrik OpenStreetMap Data Extracts (United Kingdom)
 - **Access:** [https://download.geofabrik.de/europe/united-kingdom.html](https://download.geofabrik.de/europe/united-kingdom.html)
 - **Attribution and Licence:** Map data `© OpenStreetMap contributors`, licensed under the [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1-0/) ([https://www.openstreetmap.org/copyright](https://www.openstreetmap.org/copyright)).
+
+## 3. Retail Centre Network Catchment Polygons
+
+- **Walk Catchments (`Input Data/walk_catchments.gpkg`):** MultiPolygon walking isochrone catchments for all 9,623 centres (`EPSG:4326`, 5 to 15 minutes by retail hierarchy).
+- **Drive Catchments (`Input Data/drive_catchments.gpkg`):** MultiPolygon driving isochrone catchments for all 9,623 centres (`EPSG:4326`, 5 to 20 minutes by retail hierarchy). Downloaded and stored locally in `Input Data/`.
+- **Catchment Duration Mapping (`Input Data/variable_dictionary_rc_catchment_durations.csv`):** Lookup table defining threshold minutes by retail centre classification.
